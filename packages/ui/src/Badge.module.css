@@ -1,0 +1,55 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.2;
+  pointer-events: auto;
+  cursor: default;
+}
+
+.badge:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.label {
+  pointer-events: none;
+}
+
+.actions {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.actions button {
+  pointer-events: auto;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0 2px;
+}
+
+.neutral {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.warn {
+  background: #fef3c7;
+  color: #78350f;
+}
+
+.alert {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
+.muted {
+  background: #f3f4f6;
+  color: #6b7280;
+}

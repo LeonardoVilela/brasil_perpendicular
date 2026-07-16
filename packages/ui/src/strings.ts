@@ -1,0 +1,53 @@
+import type { OverlayState } from "./overlay-state";
+
+/**
+ * Único ponto de texto voltado ao usuário. Nunca usar strings literais
+ * fora deste arquivo em Badge.tsx / DetailsPanel.tsx.
+ */
+
+export type Tone = "neutral" | "warn" | "alert" | "muted";
+
+export const STATE_STRINGS: Record<OverlayState, { label: string; tone: Tone }> = {
+  waiting: { label: "Aguardando análise", tone: "neutral" },
+  analyzing: { label: "Analisando…", tone: "neutral" },
+  declared_ai: { label: "Declarado como IA", tone: "alert" },
+  likely_ai: { label: "Provavelmente gerado por IA", tone: "alert" },
+  possibly_ai: { label: "Possivelmente gerado ou manipulado por IA", tone: "warn" },
+  insufficient_evidence: { label: "Sem evidências suficientes", tone: "neutral" },
+  inconclusive: { label: "Análise inconclusiva", tone: "neutral" },
+  error: { label: "Não foi possível analisar", tone: "muted" },
+};
+
+export const DISCLAIMER =
+  "Este resultado indica evidências, não constitui prova definitiva.";
+
+export const BADGE_STRINGS = {
+  expandLabel: "Expandir detalhes",
+  collapseLabel: "Recolher detalhes",
+  minimizeLabel: "Minimizar",
+  closeLabel: "Fechar",
+  expandIcon: "▼",
+  collapseIcon: "▲",
+  minimizeIcon: "−",
+  closeIcon: "×",
+};
+
+export const PANEL_STRINGS = {
+  title: "Detalhes da análise",
+  evidenceSection: "Evidências encontradas",
+  executedSection: "Análises executadas",
+  unavailableSection: "Análises indisponíveis",
+  riskSection: "Contexto de risco",
+  riskExplanation:
+    "Este contexto indica risco de golpe associado à publicação — não é prova de conteúdo gerado por IA.",
+  deepAnalyzeButton: "Analisar com mais profundidade",
+  deepAnalyzeDisabledTitle: "Análise profunda desativada nas configurações.",
+  falsePositiveButton: "Informar falso positivo",
+  falseNegativeButton: "Informar falso negativo",
+  consentTitle: "O que será enviado para análise",
+  consentItemText: "Título, descrição e hashtags (truncados)",
+  consentItemUrl: "URL da página, sem parâmetros de rastreamento",
+  consentItemPlatform: "Plataforma",
+  consentSendButton: "Enviar para análise",
+  consentCancelButton: "Cancelar",
+};
