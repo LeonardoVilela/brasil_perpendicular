@@ -20,6 +20,7 @@ export default defineWorkspace([
       name: 'ui',
       root: './packages/ui',
       environment: 'happy-dom',
+      globals: true,
     },
   },
   {
