@@ -1,0 +1,36 @@
+/**
+ * Fila de jobs assíncronos com limite de concorrência. Um job que rejeita
+ * não trava a fila: a rejeição é engolida e o próximo job inicia normalmente.
+ */
+export class AnalysisQueue {
+  private readonly maxConcurrent: number;
+  private running = 0;
+  private readonly queue: Array<() => Promise<void>> = [];
+
+  constructor(maxConcurrent: number) {
+    this.maxConcurrent = maxConcurrent;
+  }
+
+  get pending(): number {
+    return this.queue.length;
+  }
+
+  enqueue(job: () => Promise<void>): void {
+    this.queue.push(job);
+    this.runNext();
+  }
+
+  private runNext(): void {
+    if (this.running >= this.maxConcurrent) return;
+    const job = this.queue.shift();
+    if (!job) return;
+
+    this.running++;
+    job()
+      .catch(() => {})
+      .finally(() => {
+        this.running--;
+        this.runNext();
+      });
+  }
+}
