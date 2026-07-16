@@ -65,14 +65,20 @@ export function startPipeline(deps: PipelineDeps): () => void {
     });
   }
 
-  // Nota (ponytail): se o src do vídeo trocar (loadstart), onVideoAdded é
-  // chamado de novo para o mesmo elemento; registry.track é idempotente e
-  // retorna o TrackedVideo (e cacheKey) antigos. Invalidar corretamente nesse
-  // caso — parando o observer antigo e recriando o overlay — fica para
-  // quando houver um teste guiando esse cenário; hoje ele não é exercitado.
   function onVideoAdded(video: HTMLVideoElement): void {
+    // Re-emissão para o mesmo elemento = src trocou (loadstart): o cacheKey e
+    // o watcher de visibilidade antigos não valem mais.
+    const previous = registry.get(video);
+    if (previous) {
+      visibilityStops.get(video)?.();
+      visibilityStops.delete(video);
+      registry.invalidate(video);
+    }
+
     const tracked = registry.track(video, adapter.name);
+    if (previous) tracked.overlayHost = previous.overlayHost; // mantém host único por vídeo
     overlays.show(tracked);
+    if (previous) overlays.setState(tracked, "waiting");
 
     const stopVisibility = watchVisibility(video, settings.minVisibleMs, () => {
       if (!video.isConnected) {

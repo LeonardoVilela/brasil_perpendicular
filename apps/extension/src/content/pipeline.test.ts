@@ -236,6 +236,51 @@ describe("startPipeline", () => {
     stop();
   });
 
+  it("troca de src (loadstart) limpa o watcher antigo, recalcula o cacheKey e volta para waiting", async () => {
+    const video = addVideo();
+    video.src = "https://cdn.example.com/a.mp4";
+    const overlays = makeFakeOverlays();
+    const sendMessage = vi.fn(async (): Promise<MessageResponse<unknown>> => missResponse());
+    const registry = new VideoRegistry();
+
+    const stop = startPipeline({
+      registry,
+      queue: new AnalysisQueue(2),
+      overlays,
+      settings: { ...DEFAULT_SETTINGS, minVisibleMs: 300, autoAnalyzeEnabled: true },
+      sendMessage,
+    });
+
+    const firstKey = registry.get(video)!.cacheKey;
+    expect(ioInstances).toHaveLength(1);
+
+    video.src = "https://cdn.example.com/b.mp4";
+    video.dispatchEvent(new Event("loadstart"));
+
+    // Watcher antigo desconectado (sem dwell duplicado empilhado) e um novo criado.
+    expect(ioInstances).toHaveLength(2);
+    expect(ioInstances[0]!.disconnected).toBe(true);
+
+    // cacheKey recalculada para o novo src.
+    const secondKey = registry.get(video)!.cacheKey;
+    expect(secondKey).not.toBe(firstKey);
+
+    // Estado visual volta para waiting.
+    const waitingCall = overlays.calls.find(
+      (c) => c.method === "setState" && c.args[1] === "waiting",
+    );
+    expect(waitingCall).toBeDefined();
+
+    // Só o watcher novo dispara dwell: uma única análise.
+    await triggerDwell(300);
+    const analyzingCalls = overlays.calls.filter(
+      (c) => c.method === "setState" && c.args[1] === "analyzing",
+    );
+    expect(analyzingCalls).toHaveLength(1);
+
+    stop();
+  });
+
   it("cleanup retornado para o watcher de vídeos e remove overlays restantes", async () => {
     addVideo();
     const overlays = makeFakeOverlays();
