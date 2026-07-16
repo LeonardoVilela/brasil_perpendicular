@@ -1,0 +1,11 @@
+/* Reset mínimo para o host do overlay dentro do shadow root. O host vive na
+   árvore leve (light DOM) da página hospedeira e pode herdar regras dela
+   (margin, box-sizing etc.) mesmo com o conteúdo do shadow root isolado; o
+   :host aqui garante uma base previsível. O CSS de Badge/DetailsPanel entra
+   à parte, via import direto (?inline) dos .module.css de @bp/ui em
+   overlay-manager.tsx — @import não preserva os nomes de classe com hash que
+   esses componentes usam em runtime, então não pode ser reaproveitado aqui. */
+:host {
+  all: initial;
+  font-family: system-ui, sans-serif;
+}

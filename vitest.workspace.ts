@@ -28,6 +28,9 @@ export default defineWorkspace([
       name: 'extension',
       root: './apps/extension',
       environment: 'happy-dom',
+      // overlay-manager injeta CSS real (styles.css?inline) no shadow root;
+      // sem isso, Vitest troca todo import de CSS por um stub vazio.
+      css: true,
     },
   },
 ]);
