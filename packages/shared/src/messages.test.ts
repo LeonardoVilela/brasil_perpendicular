@@ -84,6 +84,11 @@ describe("requestMessageSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("aceita CACHE_CLEAR", () => {
+    const result = requestMessageSchema.safeParse({ kind: "CACHE_CLEAR" });
+    expect(result.success).toBe(true);
+  });
+
   it("rejeita kind desconhecido", () => {
     const result = requestMessageSchema.safeParse({ kind: "UNKNOWN_KIND", key: "k" });
     expect(result.success).toBe(false);

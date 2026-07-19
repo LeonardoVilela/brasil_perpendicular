@@ -104,6 +104,7 @@ const feedbackPayloadSchema: z.ZodType<FeedbackPayload> = z.object({
 export type RequestMessage =
   | { kind: "CACHE_GET"; key: string }
   | { kind: "CACHE_PUT"; key: string; assessment: DetectionAssessment }
+  | { kind: "CACHE_CLEAR" }
   | { kind: "SETTINGS_GET" }
   | { kind: "SETTINGS_SET"; settings: Settings }
   | { kind: "DEEP_ANALYZE_REQUEST"; context: VideoContext }
@@ -121,6 +122,7 @@ export interface DeepAnalysisReply {
 export const requestMessageSchema: z.ZodType<RequestMessage> = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("CACHE_GET"), key: z.string() }),
   z.object({ kind: z.literal("CACHE_PUT"), key: z.string(), assessment: detectionAssessmentSchema }),
+  z.object({ kind: z.literal("CACHE_CLEAR") }),
   z.object({ kind: z.literal("SETTINGS_GET") }),
   z.object({ kind: z.literal("SETTINGS_SET"), settings: settingsSchema }),
   z.object({ kind: z.literal("DEEP_ANALYZE_REQUEST"), context: videoContextSchema }),
