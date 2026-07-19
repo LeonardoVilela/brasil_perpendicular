@@ -21,8 +21,12 @@ export interface ChromeMock {
   runtime: {
     id: string;
     onMessage: { addListener: (listener: MessageListener) => void };
+    /** Mensagens enviadas pela própria extensão (popup/options), não pela página. */
+    sendMessage: ReturnType<typeof vi.fn>;
+    openOptionsPage: ReturnType<typeof vi.fn>;
   };
   scripting: { executeScript: ReturnType<typeof vi.fn> };
+  tabs: { query: ReturnType<typeof vi.fn> };
   /** Simula uma mensagem chegando pelo runtime.onMessage; resolve com a resposta. */
   dispatchMessage: (
     message: unknown,
@@ -62,9 +66,14 @@ export function installChromeMock(): ChromeMock {
           listeners.push(listener);
         },
       },
+      sendMessage: vi.fn(async () => ({ ok: true, data: undefined })),
+      openOptionsPage: vi.fn(),
     },
     scripting: {
       executeScript: vi.fn(async () => []),
+    },
+    tabs: {
+      query: vi.fn(async () => [{ id: 1 }]),
     },
     dispatchMessage: (message, sender = {}) =>
       new Promise((resolve) => {

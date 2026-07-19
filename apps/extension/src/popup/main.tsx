@@ -1,8 +1,5 @@
 import { createRoot } from "react-dom/client";
-
-function Popup() {
-  return <h1>Brasil Perpendicular</h1>;
-}
+import { Popup } from "./Popup";
 
 const container = document.getElementById("root");
 if (container) {

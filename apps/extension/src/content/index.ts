@@ -1,4 +1,5 @@
-import { DEFAULT_SETTINGS, type MessageResponse, type RequestMessage, type Settings } from "@bp/shared";
+import { DEFAULT_SETTINGS, type Settings } from "@bp/shared";
+import { sendMessage } from "../send-message";
 import { pickAdapter } from "../platforms/registry";
 import { AnalysisQueue } from "./analysis-queue";
 import { OverlayManager } from "./overlay-manager";
@@ -8,21 +9,6 @@ import { VideoRegistry } from "./video-registry";
 declare global {
   interface Window {
     __bpContentLoaded?: boolean;
-  }
-}
-
-/**
- * Envolve chrome.runtime.sendMessage em MessageResponse. O service worker
- * ainda não trata todas as mensagens (chega na Tarefa 12) — sem handler, a
- * chamada rejeita e cai aqui como {ok:false}, nunca lança para o chamador.
- */
-async function sendMessage(message: RequestMessage): Promise<MessageResponse<unknown>> {
-  try {
-    const response = (await chrome.runtime.sendMessage(message)) as MessageResponse<unknown> | undefined;
-    if (!response) return { ok: false, error: "sem resposta do service worker" };
-    return response;
-  } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "falha ao enviar mensagem" };
   }
 }
 
