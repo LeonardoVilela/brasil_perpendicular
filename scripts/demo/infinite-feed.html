@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Feed de vídeos curtos de exemplo, sem conteúdo gerado por IA.">
+  <title>Feed infinito — demonstração</title>
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+  <nav class="back"><a href="index.html">← Voltar ao índice</a></nav>
+  <h1>Feed com carregamento infinito</h1>
+  <p>
+    Role até perto do fim da lista para carregar mais cards. Cada card injeta
+    um novo <code>&lt;video&gt;</code> no DOM, exercitando o
+    <code>MutationObserver</code> da extensão, o tempo mínimo de permanência
+    visível (~2 s) e a fila de análise. O feed para em 30 cards.
+  </p>
+
+  <div id="feed"></div>
+  <p id="sentinel">Carregando mais vídeos…</p>
+
+  <script>
+    (function () {
+      const MP4 = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
+      const WEBM = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm";
+      const MAX_CARDS = 30;
+      const feed = document.getElementById("feed");
+      const sentinel = document.getElementById("sentinel");
+      let count = 0;
+
+      function addCard() {
+        if (count >= MAX_CARDS) {
+          sentinel.textContent = "Fim do feed (30 cards).";
+          return;
+        }
+        count += 1;
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML =
+          '<p class="card-index">Card ' + count + '</p>' +
+          '<video controls width="360" crossorigin="anonymous">' +
+          '<source src="' + MP4 + '" type="video/mp4">' +
+          '<source src="' + WEBM + '" type="video/webm">' +
+          "Seu navegador não suporta reprodução de vídeo HTML5." +
+          "</video>" +
+          "<p>Vídeo de exemplo neutro, sem sinais de IA ou golpe.</p>";
+        feed.appendChild(card);
+
+        if (count >= MAX_CARDS) sentinel.textContent = "Fim do feed (30 cards).";
+      }
+
+      for (let i = 0; i < 3; i += 1) addCard();
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting && count < MAX_CARDS) addCard();
+          }
+        },
+        { rootMargin: "300px" },
+      );
+      observer.observe(sentinel);
+    })();
+  </script>
+</body>
+</html>
