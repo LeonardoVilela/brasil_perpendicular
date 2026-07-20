@@ -117,7 +117,7 @@ interface DetectionAssessment {
 
 1. `error` — falha inesperada durante a análise.
 2. `inconclusive` — nenhuma análise pôde ser executada (ex.: contexto vazio E visual indisponível).
-3. `declared_ai` — existe grupo de `platform_disclosure` com `g ≥ 0.9` **ou** grupo `explicit-declaration` com `g ≥ 0.8` **ou** procedência confiável declarando IA (futuro). Decisão por gatilho, não por score.
+3. `declared_ai` — existe grupo de `platform_disclosure` com `g ≥ 0.9` **ou** grupo `explicit-declaration` com `g ≥ 0.75` (declaração explícita do autor: weight 0.85 × confidence 0.9 = 0.765) **ou** procedência confiável declarando IA (futuro). Decisão por gatilho, não por score.
 4. `likely_ai` — `S ≥ 0.75` (exige ≥1 grupo forte, ou ≥2 grupos médios independentes, pelos tetos da seção 5).
 5. `possibly_ai` — `0.45 ≤ S < 0.75`.
 6. `insufficient_evidence` — `S < 0.45` com pelo menos uma análise executada.
@@ -164,7 +164,7 @@ Contratos em [architecture.md](architecture.md) §D7 e implementação em `apps/
 - `POST /api/v1/analyze/context`: campos de texto ≤ 20 000 caracteres no total;
 - `POST /api/v1/analyze/frames` e `/deep`: máx. 6 frames JPEG base64, ≤ 1 MB cada, payload total ≤ 5 MB;
 - respostas de análise na 1ª entrega: `{"status": "unavailable", "detail": "..."}` — nunca resultado fabricado;
-- `POST /api/v1/feedback`: `{assessment_summary, expected, comment?}` sanitizado (sem frames, sem URL não normalizada), gravado em JSONL local.
+- `POST /api/v1/feedback`: `{classification, score, assessment_version, ruleset_version, expected, comment?}` sanitizado (sem frames, sem URL não normalizada), gravado em JSONL local.
 
 ## 9. Interfaces futuras (declaradas, não implementadas)
 

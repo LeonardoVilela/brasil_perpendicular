@@ -52,7 +52,7 @@ O que **não** é enviado: cookies, headers de sessão, histórico, conteúdo de
 
 ## 4. Normalização de URLs
 
-Antes de armazenar ou transmitir qualquer URL, remover parâmetros de tracking — lista mantida em `packages/shared/src/url-normalization.ts` e coberta por testes:
+Antes de armazenar ou transmitir qualquer URL, remover parâmetros de tracking — lista mantida em `packages/shared/src/url.ts` e coberta por testes:
 
 `utm_*`, `fbclid`, `gclid`, `dclid`, `msclkid`, `igshid`, `igsh`, `si`, `feature`, `ref`, `ref_src`, `ref_url`, `mc_cid`, `mc_eid`, `yclid`, `twclid`, `ttclid`.
 
