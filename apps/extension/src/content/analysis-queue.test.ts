@@ -22,6 +22,10 @@ async function flushMicrotasks(): Promise<void> {
 }
 
 describe("AnalysisQueue", () => {
+  it("rejeita limite de concorrência menor que 1", () => {
+    expect(() => new AnalysisQueue(0)).toThrow(RangeError);
+  });
+
   it("roda no máximo maxConcurrent jobs simultaneamente (2 de 5)", () => {
     const queue = new AnalysisQueue(2);
     const started = [false, false, false, false, false];

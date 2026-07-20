@@ -23,7 +23,10 @@ export function Options() {
   }, []);
 
   function updatePlatform(key: PlatformKey, value: boolean): void {
-    setSettings((prev) => ({ ...prev, enabledPlatforms: { ...prev.enabledPlatforms, [key]: value } }));
+    setSettings((prev) => ({
+      ...prev,
+      enabledPlatforms: { ...prev.enabledPlatforms, [key]: value },
+    }));
   }
 
   async function handleSave(): Promise<void> {
@@ -65,10 +68,10 @@ export function Options() {
         Tempo mínimo de visibilidade (segundos)
         <input
           type="number"
+          min="0"
+          step="0.1"
           value={settings.minVisibleMs / 1000}
-          onChange={(e) =>
-            setSettings((prev) => ({ ...prev, minVisibleMs: Number(e.target.value) * 1000 }))
-          }
+          onChange={(e) => setSettings((prev) => ({ ...prev, minVisibleMs: Number(e.target.value) * 1000 }))}
         />
       </label>
 
@@ -76,10 +79,10 @@ export function Options() {
         Máximo de análises simultâneas
         <input
           type="number"
+          min="1"
+          step="1"
           value={settings.maxConcurrentAnalyses}
-          onChange={(e) =>
-            setSettings((prev) => ({ ...prev, maxConcurrentAnalyses: Number(e.target.value) }))
-          }
+          onChange={(e) => setSettings((prev) => ({ ...prev, maxConcurrentAnalyses: Number(e.target.value) }))}
         />
       </label>
 
@@ -118,7 +121,7 @@ export function Options() {
       <label>
         URL da API
         <input
-          type="text"
+          type="url"
           value={settings.apiUrl}
           onChange={(e) => setSettings((prev) => ({ ...prev, apiUrl: e.target.value }))}
         />

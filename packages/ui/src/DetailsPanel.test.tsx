@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { DetectionAssessment } from "@bp/shared";
 import { DetailsPanel } from "./DetailsPanel";
-import { DISCLAIMER, PANEL_STRINGS } from "./strings";
+import { CONFIDENCE_STRINGS, DISCLAIMER, PANEL_STRINGS, STATE_STRINGS } from "./strings";
 
 function makeAssessment(overrides: Partial<DetectionAssessment> = {}): DetectionAssessment {
   return {
@@ -37,6 +37,15 @@ function makeAssessment(overrides: Partial<DetectionAssessment> = {}): Detection
 function noop() {}
 
 describe("DetailsPanel", () => {
+  it("mostra classificação, confiança e limitações do assessment", () => {
+    render(
+      <DetailsPanel assessment={makeAssessment()} deepAnalysisEnabled={true} onDeepAnalyze={noop} onFeedback={noop} />,
+    );
+    expect(screen.getByText(STATE_STRINGS.possibly_ai.label)).toBeTruthy();
+    expect(screen.getByText(CONFIDENCE_STRINGS.medium)).toBeTruthy();
+    expect(screen.getByText("Sem acesso a metadados de proveniência")).toBeTruthy();
+  });
+
   it("lista os rótulos das evidências encontradas", () => {
     render(
       <DetailsPanel assessment={makeAssessment()} deepAnalysisEnabled={true} onDeepAnalyze={noop} onFeedback={noop} />,
@@ -86,12 +95,7 @@ describe("DetailsPanel", () => {
 
   it("desabilita o botão de análise profunda com título explicativo quando deepAnalysisEnabled é false", () => {
     render(
-      <DetailsPanel
-        assessment={makeAssessment()}
-        deepAnalysisEnabled={false}
-        onDeepAnalyze={noop}
-        onFeedback={noop}
-      />,
+      <DetailsPanel assessment={makeAssessment()} deepAnalysisEnabled={false} onDeepAnalyze={noop} onFeedback={noop} />,
     );
     const button = screen.getByRole("button", { name: PANEL_STRINGS.deepAnalyzeButton });
     expect(button.hasAttribute("disabled")).toBe(true);
@@ -102,7 +106,12 @@ describe("DetailsPanel", () => {
     const onFeedback = vi.fn();
     const user = userEvent.setup();
     render(
-      <DetailsPanel assessment={makeAssessment()} deepAnalysisEnabled={true} onDeepAnalyze={noop} onFeedback={onFeedback} />,
+      <DetailsPanel
+        assessment={makeAssessment()}
+        deepAnalysisEnabled={true}
+        onDeepAnalyze={noop}
+        onFeedback={onFeedback}
+      />,
     );
     await user.click(screen.getByRole("button", { name: PANEL_STRINGS.falsePositiveButton }));
     expect(onFeedback).toHaveBeenCalledWith("false_positive");

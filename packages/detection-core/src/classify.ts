@@ -23,17 +23,11 @@ function groupEffective(evidence: Evidence[], domain: EvidenceDomain, correlatio
 
 /**
  * Classifica evidências em uma das categorias de `docs/detection-pipeline.md` §6.
- * `score` é o noisy-OR entre `synthetic_media` e `platform_disclosure` (divulgação
- * de plataforma conta para o score, mas o gatilho `declared_ai` é checado antes
- * e por grupo específico, não pelo score combinado).
+ * `score` representa somente o domínio `synthetic_media`. Divulgação de
+ * plataforma permanece separada e participa apenas do gatilho `declared_ai`.
  */
-export function classify(
-  evidence: Evidence[],
-  executed: string[],
-): { classification: Classification; score: number } {
-  const syntheticScore = aggregateDomain(evidence, "synthetic_media");
-  const disclosureScore = aggregateDomain(evidence, "platform_disclosure");
-  const score = 1 - (1 - syntheticScore) * (1 - disclosureScore);
+export function classify(evidence: Evidence[], executed: string[]): { classification: Classification; score: number } {
+  const score = aggregateDomain(evidence, "synthetic_media");
 
   if (executed.length === 0) {
     return { classification: "inconclusive", score };

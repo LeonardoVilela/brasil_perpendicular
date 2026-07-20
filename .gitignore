@@ -223,3 +223,6 @@ dist/
 coverage/
 *.tsbuildinfo
 .env
+
+# Runtime data
+apps/api/data/feedback.jsonl

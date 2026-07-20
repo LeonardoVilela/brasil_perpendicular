@@ -54,6 +54,19 @@ describe("requestMessageSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("rejeita SETTINGS_SET com concorrência inválida ou URL da API malformada", () => {
+    const invalidConcurrency = requestMessageSchema.safeParse({
+      kind: "SETTINGS_SET",
+      settings: { ...DEFAULT_SETTINGS, maxConcurrentAnalyses: 0 },
+    });
+    const invalidApiUrl = requestMessageSchema.safeParse({
+      kind: "SETTINGS_SET",
+      settings: { ...DEFAULT_SETTINGS, apiUrl: "não é uma URL" },
+    });
+    expect(invalidConcurrency.success).toBe(false);
+    expect(invalidApiUrl.success).toBe(false);
+  });
+
   it("aceita DEEP_ANALYZE_REQUEST com contexto válido", () => {
     const result = requestMessageSchema.safeParse({
       kind: "DEEP_ANALYZE_REQUEST",

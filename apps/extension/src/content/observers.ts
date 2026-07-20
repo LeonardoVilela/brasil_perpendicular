@@ -13,9 +13,13 @@ function findVideos(node: Node): HTMLVideoElement[] {
  * WeakSet) e novamente sempre que o `src` do vídeo trocar (evento
  * `loadstart`), para que o chamador possa invalidar o cache.
  */
-export function watchVideos(root: Document, onAdded: (video: HTMLVideoElement) => void): () => void {
+export function watchVideos(
+  root: Document,
+  onAdded: (video: HTMLVideoElement) => void,
+  onRemoved?: (video: HTMLVideoElement) => void,
+): () => void {
   const seen = new WeakSet<HTMLVideoElement>();
-  const loadstartHandlers: Array<[HTMLVideoElement, EventListener]> = [];
+  const loadstartHandlers = new Map<HTMLVideoElement, EventListener>();
   let pending = new Set<HTMLVideoElement>();
   let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -25,7 +29,7 @@ export function watchVideos(root: Document, onAdded: (video: HTMLVideoElement) =
 
     const onLoadstart = () => onAdded(video);
     video.addEventListener("loadstart", onLoadstart);
-    loadstartHandlers.push([video, onLoadstart]);
+    loadstartHandlers.set(video, onLoadstart);
 
     onAdded(video);
   }
@@ -35,11 +39,30 @@ export function watchVideos(root: Document, onAdded: (video: HTMLVideoElement) =
   }
 
   const observer = new MutationObserver((mutations) => {
+    const removed = new Set<HTMLVideoElement>();
+    const added = new Set<HTMLVideoElement>();
     for (const mutation of mutations) {
+      for (const node of Array.from(mutation.removedNodes)) {
+        for (const video of findVideos(node)) removed.add(video);
+      }
       for (const node of Array.from(mutation.addedNodes)) {
-        for (const video of findVideos(node)) {
-          if (!seen.has(video)) pending.add(video);
-        }
+        for (const video of findVideos(node)) added.add(video);
+      }
+    }
+
+    for (const video of removed) {
+      if (video.isConnected) continue;
+      pending.delete(video);
+      const handler = loadstartHandlers.get(video);
+      if (handler) video.removeEventListener("loadstart", handler);
+      loadstartHandlers.delete(video);
+      seen.delete(video);
+      onRemoved?.(video);
+    }
+
+    for (const video of added) {
+      if (video.isConnected && !seen.has(video)) {
+        pending.add(video);
       }
     }
 
@@ -63,7 +86,7 @@ export function watchVideos(root: Document, onAdded: (video: HTMLVideoElement) =
     for (const [video, handler] of loadstartHandlers) {
       video.removeEventListener("loadstart", handler);
     }
-    loadstartHandlers.length = 0;
+    loadstartHandlers.clear();
   };
 }
 
@@ -71,11 +94,7 @@ export function watchVideos(root: Document, onAdded: (video: HTMLVideoElement) =
  * Chama onDwell uma única vez, quando o vídeo permanece visível
  * (intersectionRatio >= 0.5) por pelo menos minVisibleMs contínuos.
  */
-export function watchVisibility(
-  video: HTMLVideoElement,
-  minVisibleMs: number,
-  onDwell: () => void,
-): () => void {
+export function watchVisibility(video: HTMLVideoElement, minVisibleMs: number, onDwell: () => void): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let fired = false;
 

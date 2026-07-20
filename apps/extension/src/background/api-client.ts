@@ -1,4 +1,10 @@
-import type { DeepAnalysisReply, FeedbackPayload, MessageResponse, VideoContext } from "@bp/shared";
+import {
+  normalizeUrl,
+  type DeepAnalysisReply,
+  type FeedbackPayload,
+  type MessageResponse,
+  type VideoContext,
+} from "@bp/shared";
 
 const TIMEOUT_MS = 10_000;
 
@@ -25,16 +31,15 @@ export async function requestDeepAnalysis(
   ctx: VideoContext,
   apiUrl: string,
 ): Promise<MessageResponse<DeepAnalysisReply>> {
-  const payload = {
-    platform: ctx.platform,
-    page_url: ctx.pageUrl,
-    title: ctx.title,
-    description: ctx.description,
-    hashtags: ctx.hashtags,
-    author_name: ctx.authorName,
-  };
-
   try {
+    const payload = {
+      platform: ctx.platform.slice(0, 50),
+      page_url: normalizeUrl(ctx.pageUrl).slice(0, 2000),
+      title: ctx.title?.slice(0, 500),
+      description: ctx.description?.slice(0, 10_000),
+      hashtags: ctx.hashtags.slice(0, 50).map((tag) => tag.slice(0, 100)),
+      author_name: ctx.authorName?.slice(0, 200),
+    };
     const response = await postJson(`${apiUrl}/api/v1/analyze/context`, payload);
     if (!response.ok) {
       return { ok: false, error: `falha na API (status ${response.status})` };
@@ -47,17 +52,14 @@ export async function requestDeepAnalysis(
 }
 
 /** Feedback é ação explícita do usuário — permitido mesmo com deepAnalysisEnabled desligado. */
-export async function submitFeedback(
-  feedback: FeedbackPayload,
-  apiUrl: string,
-): Promise<MessageResponse<void>> {
+export async function submitFeedback(feedback: FeedbackPayload, apiUrl: string): Promise<MessageResponse<void>> {
   const payload = {
     classification: feedback.classification,
     score: feedback.score,
     assessment_version: feedback.assessmentVersion,
     ruleset_version: feedback.rulesetVersion,
     expected: feedback.expected,
-    comment: feedback.comment,
+    comment: feedback.comment?.slice(0, 1000),
   };
 
   try {

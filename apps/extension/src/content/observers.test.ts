@@ -157,16 +157,41 @@ describe("watchVideos", () => {
     video.dispatchEvent(new Event("loadstart"));
     expect(onAdded).toHaveBeenCalledTimes(1);
   });
+
+  it("notifica remoção, solta o listener e permite rastrear o elemento reinserido", async () => {
+    vi.useFakeTimers();
+    try {
+      document.body.innerHTML = "<video></video>";
+      const video = document.querySelector("video")!;
+      const onAdded = vi.fn();
+      const onRemoved = vi.fn();
+      const cleanup = watchVideos(document, onAdded, onRemoved);
+
+      video.remove();
+      await flushMicrotasks();
+      expect(onRemoved).toHaveBeenCalledWith(video);
+
+      video.dispatchEvent(new Event("loadstart"));
+      expect(onAdded).toHaveBeenCalledTimes(1);
+
+      document.body.appendChild(video);
+      await flushMicrotasks();
+      vi.advanceTimersByTime(250);
+      expect(onAdded).toHaveBeenCalledTimes(2);
+
+      cleanup();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("watchVisibility", () => {
   let originalIO: typeof IntersectionObserver | undefined;
 
   beforeEach(() => {
-    originalIO = (globalThis as { IntersectionObserver?: typeof IntersectionObserver })
-      .IntersectionObserver;
-    (globalThis as { IntersectionObserver: unknown }).IntersectionObserver =
-      FakeIntersectionObserver;
+    originalIO = (globalThis as { IntersectionObserver?: typeof IntersectionObserver }).IntersectionObserver;
+    (globalThis as { IntersectionObserver: unknown }).IntersectionObserver = FakeIntersectionObserver;
     vi.useFakeTimers();
   });
 

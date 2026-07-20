@@ -21,14 +21,15 @@ export interface PipelineDeps {
  */
 export function startPipeline(deps: PipelineDeps): () => void {
   const { registry, queue, overlays, settings, sendMessage } = deps;
-  if (!settings.showBadge) {
+  const adapter = pickAdapter(location);
+  if (!settings.enabledPlatforms[adapter.name]) {
     return () => {};
   }
 
-  const adapter = pickAdapter(location);
   const visibilityStops = new Map<HTMLVideoElement, () => void>();
 
   function forgetVideo(video: HTMLVideoElement, tracked: TrackedVideo): void {
+    if (registry.get(video) !== tracked) return;
     overlays.remove(tracked);
     registry.invalidate(video);
     visibilityStops.get(video)?.();
@@ -37,30 +38,40 @@ export function startPipeline(deps: PipelineDeps): () => void {
 
   function runAnalysis(video: HTMLVideoElement, tracked: TrackedVideo): void {
     queue.enqueue(async () => {
+      if (registry.get(video) !== tracked) return;
       if (!video.isConnected) {
         forgetVideo(video, tracked);
         return;
       }
 
-      overlays.setState(tracked, "analyzing");
+      if (settings.showBadge) overlays.setState(tracked, "analyzing");
       try {
+        const context = adapter.extractContext(video, document);
+        registry.refreshIdentity(video, adapter.name, context);
         const cached = await sendMessage({ kind: "CACHE_GET", key: tracked.cacheKey });
+        if (registry.get(video) !== tracked) return;
+
         let assessment: DetectionAssessment;
         if (cached.ok && cached.data) {
           assessment = cached.data as DetectionAssessment;
         } else {
-          const context = adapter.extractContext(video, document);
           assessment = assess(context);
+          if (registry.get(video) !== tracked) return;
           await sendMessage({ kind: "CACHE_PUT", key: tracked.cacheKey, assessment });
         }
 
+        if (registry.get(video) !== tracked) return;
         if (!video.isConnected) {
           forgetVideo(video, tracked);
           return;
         }
-        overlays.setState(tracked, assessment.classification, assessment);
+        if (settings.showBadge) {
+          overlays.setState(tracked, assessment.classification, assessment);
+        }
       } catch {
-        overlays.setState(tracked, "error");
+        if (settings.showBadge && registry.get(video) === tracked) {
+          overlays.setState(tracked, "error");
+        }
       }
     });
   }
@@ -72,13 +83,12 @@ export function startPipeline(deps: PipelineDeps): () => void {
     if (previous) {
       visibilityStops.get(video)?.();
       visibilityStops.delete(video);
+      overlays.remove(previous);
       registry.invalidate(video);
     }
 
     const tracked = registry.track(video, adapter.name);
-    if (previous) tracked.overlayHost = previous.overlayHost; // mantém host único por vídeo
-    overlays.show(tracked);
-    if (previous) overlays.setState(tracked, "waiting");
+    if (settings.showBadge) overlays.show(tracked);
 
     const stopVisibility = watchVisibility(video, settings.minVisibleMs, () => {
       if (!video.isConnected) {
@@ -90,7 +100,10 @@ export function startPipeline(deps: PipelineDeps): () => void {
     visibilityStops.set(video, stopVisibility);
   }
 
-  const stopWatchVideos = watchVideos(document, onVideoAdded);
+  const stopWatchVideos = watchVideos(document, onVideoAdded, (video) => {
+    const tracked = registry.get(video);
+    if (tracked) forgetVideo(video, tracked);
+  });
 
   return () => {
     stopWatchVideos();
