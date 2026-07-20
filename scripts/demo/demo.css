@@ -1,0 +1,154 @@
+/* Estilo mínimo compartilhado pelas páginas de demonstração local.
+   Sem framework, sem build — só o essencial para leitura confortável
+   durante testes manuais da extensão. */
+
+:root {
+  color-scheme: light;
+  --border: #d1d5db;
+  --muted: #6b7280;
+  --bg-note: #fffbeb;
+  --border-note: #fde68a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+  line-height: 1.5;
+  color: #111827;
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
+nav.back {
+  margin-bottom: 24px;
+}
+
+nav.back a {
+  color: #1d4ed8;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+nav.back a:hover {
+  text-decoration: underline;
+}
+
+video {
+  display: block;
+  max-width: 100%;
+  background: #000;
+  margin: 12px 0;
+}
+
+.note {
+  background: var(--bg-note);
+  border: 1px solid var(--border-note);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 20px 0;
+  font-size: 0.9rem;
+}
+
+.page-list {
+  list-style: none;
+  padding: 0;
+}
+
+.page-list li {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+}
+
+.page-list a {
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.page-list p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+figure {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  margin: 0 0 24px;
+}
+
+figcaption {
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.figure-label {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.card-index {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin: 0 0 8px;
+}
+
+#sentinel {
+  text-align: center;
+  color: var(--muted);
+  padding: 24px 0;
+}
+
+.player-wrapper {
+  position: relative;
+  max-width: 480px;
+}
+
+.player-wrapper video {
+  margin: 0;
+}
+
+.custom-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.custom-controls button {
+  background: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.custom-controls .seek-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 2px;
+}
