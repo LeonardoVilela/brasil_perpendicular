@@ -52,6 +52,30 @@ describe("VideoRegistry", () => {
     expect(tracked.cacheKey).not.toContain("blob:");
   });
 
+  it("contextos diferentes produzem cacheKeys diferentes para o mesmo src na mesma página", () => {
+    const registry = new VideoRegistry();
+    const first = makeVideo("https://cdn.example.com/shared.mp4");
+    const second = makeVideo("https://cdn.example.com/shared.mp4");
+    const baseContext = {
+      platform: "generic",
+      pageUrl: normalizeUrl(location.href),
+      hashtags: [],
+      ariaLabels: [],
+      captions: [],
+    };
+
+    const firstTracked = registry.refreshIdentity(first, "generic", {
+      ...baseContext,
+      description: "Contexto neutro",
+    });
+    const secondTracked = registry.refreshIdentity(second, "generic", {
+      ...baseContext,
+      description: "Este vídeo foi gerado por IA",
+    });
+
+    expect(firstTracked.cacheKey).not.toBe(secondTracked.cacheKey);
+  });
+
   it("invalidate remove o rastreamento", () => {
     const registry = new VideoRegistry();
     const video = makeVideo("https://cdn.example.com/a.mp4");

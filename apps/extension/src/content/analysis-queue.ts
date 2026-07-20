@@ -8,6 +8,9 @@ export class AnalysisQueue {
   private readonly queue: Array<() => Promise<void>> = [];
 
   constructor(maxConcurrent: number) {
+    if (!Number.isInteger(maxConcurrent) || maxConcurrent < 1) {
+      throw new RangeError("maxConcurrent deve ser um inteiro maior ou igual a 1");
+    }
     this.maxConcurrent = maxConcurrent;
   }
 

@@ -108,7 +108,8 @@ def test_unknown_fields_rejected() -> None:
     assert client.post("/api/v1/analyze/context", json=payload).status_code == 422
 
 
-def test_feedback_returns_received() -> None:
+def test_feedback_returns_received(tmp_path: Any, monkeypatch: Any) -> None:
+    monkeypatch.setenv("FEEDBACK_PATH", str(tmp_path / "feedback.jsonl"))
     resp = client.post("/api/v1/feedback", json=valid_feedback())
     assert resp.status_code == 200
     assert resp.json() == {"status": "received"}

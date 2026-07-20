@@ -18,8 +18,19 @@ export const STATE_STRINGS: Record<OverlayState, { label: string; tone: Tone }> 
   error: { label: "Não foi possível analisar", tone: "muted" },
 };
 
-export const DISCLAIMER =
-  "Este resultado indica evidências, não constitui prova definitiva.";
+export const DISCLAIMER = "Este resultado indica evidências, não constitui prova definitiva.";
+
+export const CONFIDENCE_STRINGS = {
+  low: "Baixa",
+  medium: "Média",
+  high: "Alta",
+};
+
+export const ANALYSIS_STRINGS: Record<string, string> = {
+  context_rules: "Regras de contexto",
+  visual_model: "Modelo visual",
+  provenance: "Procedência",
+};
 
 export const BADGE_STRINGS = {
   expandLabel: "Expandir detalhes",
@@ -34,9 +45,13 @@ export const BADGE_STRINGS = {
 
 export const PANEL_STRINGS = {
   title: "Detalhes da análise",
+  resultSection: "Resultado",
+  classificationLabel: "Classificação:",
+  confidenceLabel: "Confiança:",
   evidenceSection: "Evidências encontradas",
   executedSection: "Análises executadas",
   unavailableSection: "Análises indisponíveis",
+  limitationsSection: "Limitações",
   riskSection: "Contexto de risco",
   riskExplanation:
     "Este contexto indica risco de golpe associado à publicação — não é prova de conteúdo gerado por IA.",

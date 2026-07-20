@@ -69,8 +69,8 @@ const videoContextSchema: z.ZodType<VideoContext> = z.object({
 const settingsSchema: z.ZodType<Settings> = z.object({
   autoAnalyzeEnabled: z.boolean(),
   deepAnalysisEnabled: z.boolean(),
-  minVisibleMs: z.number(),
-  maxConcurrentAnalyses: z.number(),
+  minVisibleMs: z.number().int().nonnegative(),
+  maxConcurrentAnalyses: z.number().int().positive(),
   enabledPlatforms: z.object({
     youtube: z.boolean(),
     tiktok: z.boolean(),
@@ -80,7 +80,7 @@ const settingsSchema: z.ZodType<Settings> = z.object({
   }),
   showBadge: z.boolean(),
   devMode: z.boolean(),
-  apiUrl: z.string(),
+  apiUrl: z.string().url(),
 });
 
 export interface FeedbackPayload {
@@ -121,7 +121,11 @@ export interface DeepAnalysisReply {
 
 export const requestMessageSchema: z.ZodType<RequestMessage> = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("CACHE_GET"), key: z.string() }),
-  z.object({ kind: z.literal("CACHE_PUT"), key: z.string(), assessment: detectionAssessmentSchema }),
+  z.object({
+    kind: z.literal("CACHE_PUT"),
+    key: z.string(),
+    assessment: detectionAssessmentSchema,
+  }),
   z.object({ kind: z.literal("CACHE_CLEAR") }),
   z.object({ kind: z.literal("SETTINGS_GET") }),
   z.object({ kind: z.literal("SETTINGS_SET"), settings: settingsSchema }),

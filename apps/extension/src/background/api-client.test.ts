@@ -80,8 +80,7 @@ describe("requestDeepAnalysis", () => {
 
   it("omite title/description/author_name quando ausentes no contexto", async () => {
     const fetchMock = mockFetch(
-      async () =>
-        new Response(JSON.stringify({ status: "unavailable", detail: "x" }), { status: 200 }),
+      async () => new Response(JSON.stringify({ status: "unavailable", detail: "x" }), { status: 200 }),
     );
 
     const minimalContext: VideoContext = {
@@ -103,6 +102,34 @@ describe("requestDeepAnalysis", () => {
     expect(body).not.toHaveProperty("title");
     expect(body).not.toHaveProperty("description");
     expect(body).not.toHaveProperty("author_name");
+  });
+
+  it("normaliza e trunca o contexto nos limites aceitos pela API", async () => {
+    const fetchMock = mockFetch(
+      async () => new Response(JSON.stringify({ status: "unavailable", detail: "x" }), { status: 200 }),
+    );
+    await requestDeepAnalysis(
+      {
+        ...context,
+        platform: "p".repeat(60),
+        pageUrl: "https://example.com/video?utm_source=tracker",
+        title: "t".repeat(600),
+        description: "d".repeat(11_000),
+        hashtags: Array.from({ length: 60 }, () => "#" + "h".repeat(120)),
+        authorName: "a".repeat(250),
+      },
+      API_URL,
+    );
+
+    const [, init] = fetchMock.mock.calls[0]!;
+    const body = JSON.parse(init?.body as string);
+    expect(body.platform).toHaveLength(50);
+    expect(body.page_url).toBe("https://example.com/video");
+    expect(body.title).toHaveLength(500);
+    expect(body.description).toHaveLength(10_000);
+    expect(body.hashtags).toHaveLength(50);
+    expect(body.hashtags[0]).toHaveLength(100);
+    expect(body.author_name).toHaveLength(200);
   });
 
   it("timeout de 10s vira { ok: false } sem lançar", async () => {

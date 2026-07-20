@@ -25,15 +25,26 @@ describe("classify", () => {
 
   it("declared_ai quando grupo platform-label (platform_disclosure) >= 0.9", () => {
     const evidence = [
-      makeEvidence({ domain: "platform_disclosure", correlationGroup: "platform-label", weight: 1, confidence: 0.9 }),
+      makeEvidence({
+        domain: "platform_disclosure",
+        correlationGroup: "platform-label",
+        weight: 1,
+        confidence: 0.9,
+      }),
     ];
     const result = classify(evidence, ["context_rules"]);
     expect(result.classification).toBe("declared_ai");
+    expect(result.score).toBe(0);
   });
 
   it("declared_ai quando grupo explicit-declaration (synthetic_media) >= 0.75 (0.85*0.9=0.765)", () => {
     const evidence = [
-      makeEvidence({ domain: "synthetic_media", correlationGroup: "explicit-declaration", weight: 0.85, confidence: 0.9 }),
+      makeEvidence({
+        domain: "synthetic_media",
+        correlationGroup: "explicit-declaration",
+        weight: 0.85,
+        confidence: 0.9,
+      }),
     ];
     const result = classify(evidence, ["context_rules"]);
     expect(result.classification).toBe("declared_ai");
@@ -41,7 +52,12 @@ describe("classify", () => {
 
   it("não dispara declared_ai por explicit-declaration abaixo de 0.75", () => {
     const evidence = [
-      makeEvidence({ domain: "synthetic_media", correlationGroup: "explicit-declaration", weight: 0.7, confidence: 0.9 }), // 0.63
+      makeEvidence({
+        domain: "synthetic_media",
+        correlationGroup: "explicit-declaration",
+        weight: 0.7,
+        confidence: 0.9,
+      }), // 0.63
     ];
     const result = classify(evidence, ["context_rules"]);
     expect(result.classification).not.toBe("declared_ai");
@@ -77,13 +93,18 @@ describe("classify", () => {
     expect(result.score).toBe(0);
   });
 
-  it("platform_disclosure conta para o score combinado, mas não é o gatilho de declared_ai sozinho abaixo de 0.9", () => {
+  it("platform_disclosure abaixo do gatilho não entra no score de synthetic_media", () => {
     const evidence = [
-      makeEvidence({ domain: "platform_disclosure", correlationGroup: "platform-label", weight: 0.7, confidence: 0.8 }), // 0.56, médio
+      makeEvidence({
+        domain: "platform_disclosure",
+        correlationGroup: "platform-label",
+        weight: 0.7,
+        confidence: 0.8,
+      }), // 0.56, médio
     ];
     const result = classify(evidence, ["context_rules"]);
-    expect(result.classification).not.toBe("declared_ai");
-    expect(result.score).toBeGreaterThan(0);
+    expect(result.classification).toBe("insufficient_evidence");
+    expect(result.score).toBe(0);
   });
 });
 
@@ -93,22 +114,50 @@ describe("scamRiskFrom", () => {
   });
 
   it("high quando grupo de scam >= 0.7", () => {
-    const evidence = [makeEvidence({ domain: "scam_context", correlationGroup: "scam-pix", weight: 0.9, confidence: 1 })];
+    const evidence = [
+      makeEvidence({
+        domain: "scam_context",
+        correlationGroup: "scam-pix",
+        weight: 0.9,
+        confidence: 1,
+      }),
+    ];
     expect(scamRiskFrom(evidence)).toBe("high");
   });
 
   it("medium quando grupo de scam entre 0.45 e 0.7", () => {
-    const evidence = [makeEvidence({ domain: "scam_context", correlationGroup: "scam-pix", weight: 0.6, confidence: 0.9 })]; // 0.54
+    const evidence = [
+      makeEvidence({
+        domain: "scam_context",
+        correlationGroup: "scam-pix",
+        weight: 0.6,
+        confidence: 0.9,
+      }),
+    ]; // 0.54
     expect(scamRiskFrom(evidence)).toBe("medium");
   });
 
   it("low quando grupo de scam entre 0.25 e 0.45", () => {
-    const evidence = [makeEvidence({ domain: "scam_context", correlationGroup: "scam-urgency", weight: 0.4, confidence: 0.8 })]; // 0.32
+    const evidence = [
+      makeEvidence({
+        domain: "scam_context",
+        correlationGroup: "scam-urgency",
+        weight: 0.4,
+        confidence: 0.8,
+      }),
+    ]; // 0.32
     expect(scamRiskFrom(evidence)).toBe("low");
   });
 
   it("não é afetado por evidência de outros domínios", () => {
-    const evidence = [makeEvidence({ domain: "synthetic_media", correlationGroup: "explicit-declaration", weight: 1, confidence: 1 })];
+    const evidence = [
+      makeEvidence({
+        domain: "synthetic_media",
+        correlationGroup: "explicit-declaration",
+        weight: 1,
+        confidence: 1,
+      }),
+    ];
     expect(scamRiskFrom(evidence)).toBe("none");
   });
 });

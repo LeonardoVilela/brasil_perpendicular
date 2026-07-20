@@ -1,4 +1,5 @@
 import { hashContext, normalizeUrl } from "@bp/shared";
+import type { VideoContext } from "@bp/shared";
 import type { OverlayState } from "@bp/ui";
 
 export interface TrackedVideo {
@@ -8,11 +9,22 @@ export interface TrackedVideo {
   state: OverlayState;
 }
 
-function computeCacheKey(video: HTMLVideoElement, platform: string): string {
+function computeCacheKey(video: HTMLVideoElement, platform: string, context?: VideoContext): string {
   const src = video.currentSrc || video.src;
-  const safeSrc = src.startsWith("blob:") ? "" : src;
-  const contextInput = `${safeSrc}|${video.duration || ""}`;
-  return `${platform}|${normalizeUrl(location.href)}|${hashContext(contextInput)}`;
+  const safeSrc = !src || src.startsWith("blob:") ? "" : normalizeUrl(src);
+  const duration = context?.durationSeconds ?? (Number.isFinite(video.duration) ? video.duration : undefined);
+  const contextInput = JSON.stringify([
+    safeSrc,
+    duration ?? null,
+    context?.title ?? "",
+    context?.description ?? "",
+    context?.hashtags ?? [],
+    context?.ariaLabels ?? [],
+    context?.captions ?? [],
+    context?.authorName ?? "",
+  ]);
+  const pageUrl = normalizeUrl(context?.pageUrl ?? location.href);
+  return `${platform}|${pageUrl}|${hashContext(contextInput)}`;
 }
 
 export class VideoRegistry {
@@ -33,6 +45,12 @@ export class VideoRegistry {
 
   get(video: HTMLVideoElement): TrackedVideo | undefined {
     return this.entries.get(video);
+  }
+
+  refreshIdentity(video: HTMLVideoElement, platform: string, context: VideoContext): TrackedVideo {
+    const tracked = this.track(video, platform);
+    tracked.cacheKey = computeCacheKey(video, platform, context);
+    return tracked;
   }
 
   invalidate(video: HTMLVideoElement): void {
