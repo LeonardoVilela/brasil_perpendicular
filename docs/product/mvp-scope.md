@@ -88,8 +88,8 @@ Páginas HTML locais para: vídeo único; vários vídeos; feed infinito; vídeo
 
 ## 4. Requisitos não funcionais
 
-- **Privacidade por padrão**: nenhum upload automático de mídia; nada de cookies, tokens, mensagens privadas; parâmetros de tracking removidos de URLs; ver [privacy.md](../privacy.md).
-- **Permissões mínimas** no Manifest V3 (`storage`, `activeTab`, `scripting`; content scripts declarados apenas para plataformas-alvo e localhost).
+- **Privacidade por padrão**: nenhum upload automático de mídia; nada de cookies ou tokens; contexto próximo a vídeos pode ser processado apenas em memória, inclusive em páginas autenticadas; parâmetros de tracking removidos de URLs; ver [privacy.md](../privacy.md).
+- **Permissões explícitas** no Manifest V3 (`storage`, `activeTab`, `scripting`; content script automático restrito a páginas HTTP/HTTPS).
 - **Desempenho**: observers com debounce, fila com limite de concorrência, limpeza de listeners, `WeakMap`/`WeakSet` para elementos processados.
 - **Degradação graciosa**: CORS, canvas contaminado e DRM tratados como "não foi possível analisar".
 - **TypeScript strict**; sem `any` não justificado; testes determinísticos.
@@ -97,7 +97,7 @@ Páginas HTML locais para: vídeo único; vários vídeos; feed infinito; vídeo
 
 ## 5. Fora de escopo da primeira entrega
 
-- Adaptadores específicos de YouTube/TikTok/Instagram/X (Fase 2 — apenas a interface e o adaptador genérico entram agora).
+- Modelo visual real; a V2 já inclui adaptadores específicos de YouTube/TikTok/Instagram/X e fallback genérico.
 - Extração real de frames e modelo ONNX real (Fase 3).
 - Análise de áudio, temporal, C2PA, hash perceptual, busca em fact-checking (Fase 4 — apenas interfaces).
 - Telemetria (exigiria documentação e aprovação explícitas).
@@ -108,7 +108,7 @@ Páginas HTML locais para: vídeo único; vários vídeos; feed infinito; vídeo
 
 1. `npm install` + build produzem uma extensão carregável em `chrome://extensions` (modo desenvolvedor).
 2. Nas páginas de demonstração, overlays aparecem sobre vídeos (inclusive inseridos dinamicamente), sem duplicação, e só analisam após a permanência mínima em viewport.
-3. Página com texto "gerado por IA"/nome de ferramenta produz classificação e evidências coerentes; página sem sinais produz "Sem evidências suficientes".
+3. Declaração confiável da plataforma/autor produz `declared_ai`; texto genérico equivalente permanece incerto; página sem sinais produz "Sem evidências suficientes".
 4. Painel de detalhes mostra evidências, análises indisponíveis e aviso de limitação.
 5. Cache impede reanálise imediata do mesmo vídeo (verificável em modo desenvolvedor).
 6. Configurações persistem e alteram o comportamento (ex.: esconder selo).
@@ -121,7 +121,7 @@ Páginas HTML locais para: vídeo único; vários vídeos; feed infinito; vídeo
 
 - **P-1**: O repositório `brasil_perpendicular` é a raiz do monorepo; o nome do produto é "Brasil Perpendicular".
 - **P-2**: Sem análise real no servidor na primeira entrega; endpoints honestos evitam duplicar o motor de regras em Python (evita drift; revisão na Fase 3).
-- **P-3**: Suporte genérico a páginas arbitrárias acontece por ação do usuário (`activeTab`), não por content script em `<all_urls>` — privacidade e menor privilégio vencem conveniência.
+- **P-3**: Por decisão de produto de 2026-07-21, o suporte genérico é automático em páginas HTTP/HTTPS para não exigir um clique por página. Protocolos adicionais permanecem fora; análise profunda e qualquer envio continuam explícitos.
 - **P-4**: Vídeos dentro de Shadow DOM fechado de terceiros ficam fora do alcance do MVP (limitação documentada).
 - **P-5**: npm workspaces (sem pnpm/turbo) para reduzir atrito em Windows/OneDrive.
 - **P-6**: `.gitignore` atual (template Python) será estendido, não substituído.

@@ -10,7 +10,7 @@ export { declarationRules } from "./declarations";
 export { hashtagRules } from "./hashtags";
 export { scamRules } from "./scam-patterns";
 
-export const RULESET_VERSION = "0.1.0";
+export const RULESET_VERSION = "0.2.0";
 
 export const defaultRules: TextRule[] = [
   ...aiToolRules,

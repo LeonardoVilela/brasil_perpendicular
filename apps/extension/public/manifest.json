@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Brasil Perpendicular",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Sinaliza evidências de que um vídeo pode ter sido gerado ou manipulado por IA.",
   "permissions": ["storage", "activeTab", "scripting"],
   "background": { "service_worker": "service-worker.js", "type": "module" },
   "content_scripts": [
     {
-      "matches": ["http://localhost/*", "http://127.0.0.1/*"],
+      "matches": ["http://*/*", "https://*/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
     }

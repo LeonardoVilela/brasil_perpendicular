@@ -27,6 +27,13 @@ const evidenceSchema = z.object({
   weight: z.number(),
   confidence: z.number(),
   correlationGroup: z.string(),
+  origin: z.enum([
+    "signed_provenance",
+    "platform_disclosure",
+    "author_statement",
+    "page_context",
+    "technical_signal",
+  ]),
   source: z.string().optional(),
 });
 
@@ -62,6 +69,8 @@ const videoContextSchema: z.ZodType<VideoContext> = z.object({
   hashtags: z.array(z.string()),
   ariaLabels: z.array(z.string()),
   captions: z.array(z.string()),
+  authorStatements: z.array(z.string()).optional(),
+  platformLabels: z.array(z.string()).optional(),
   authorName: z.string().optional(),
   durationSeconds: z.number().optional(),
 });

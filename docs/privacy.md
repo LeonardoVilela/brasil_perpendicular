@@ -16,7 +16,7 @@ Privacidade é requisito de produto, não polimento opcional. Qualquer mudança 
 ## 2. O que a extensão NUNCA faz
 
 - Não coleta cookies, tokens de sessão ou credenciais.
-- Não acessa mensagens privadas (DMs) — content scripts não são declarados para rotas de mensagens.
+- Não procura cookies, credenciais ou áreas de mensagens. Como o content script roda em páginas HTTP/HTTPS, texto próximo a um vídeo em uma página autenticada ou privada pode ser processado localmente; esse texto não é persistido nem enviado automaticamente.
 - Não persiste frames de vídeo por padrão.
 - Não registra URLs privadas por padrão.
 - Não envia dados a terceiros; a única origem remota possível é a API configurada pelo usuário.
@@ -30,6 +30,7 @@ Privacidade é requisito de produto, não polimento opcional. Qualquer mudança 
 | Dado | Onde | Retenção | Controle do usuário |
 |---|---|---|---|
 | Preferências (settings) | `chrome.storage.local` | Até desinstalar/limpar | Tela de opções |
+| Contexto textual próximo a vídeos visíveis | Memória da aba, durante a análise local | Descartado após gerar o assessment; apenas um hash entra na identidade de cache | Desativar análise automática nas opções ou limitar o acesso a sites no navegador |
 | Cache de assessments (identidade do vídeo normalizada + resultado + versões) | `chrome.storage.local` | TTL 7 dias, máx. 500 entradas, LRU | Botão "limpar cache" nas opções |
 | Estado de overlay (fechado/minimizado) | Memória da aba | Sessão da aba | Fechar aba |
 
@@ -56,16 +57,18 @@ Antes de armazenar ou transmitir qualquer URL, remover parâmetros de tracking �
 
 `utm_*`, `fbclid`, `gclid`, `dclid`, `msclkid`, `igshid`, `igsh`, `si`, `feature`, `ref`, `ref_src`, `ref_url`, `mc_cid`, `mc_eid`, `yclid`, `twclid`, `ttclid`.
 
-Fragmentos (`#...`) são descartados, exceto quando fazem parte de rota de SPA conhecida (decisão nos adaptadores, Fase 2).
+Fragmentos (`#...`) são descartados, exceto quando fazem parte de rota de SPA conhecida pelos adaptadores.
 
 ## 5. Permissões do Manifest V3 e justificativas
 
 | Permissão | Justificativa | Escopo |
 |---|---|---|
 | `storage` | Settings e cache local | Local à extensão |
-| `activeTab` | Análise sob demanda em páginas genéricas, apenas após clique do usuário no popup | Aba ativa, uma vez |
-| `scripting` | Injetar o content script na aba ativa quando o usuário pede | Depende de `activeTab` |
-| `content_scripts.matches` | Plataformas-alvo (Fase 2) e `http://localhost/*` (demonstração) | Sem `<all_urls>` |
+| `activeTab` | Reinjeção manual de fallback pelo popup | Aba ativa, uma vez |
+| `scripting` | Executar a reinjeção manual solicitada pelo usuário | Depende de `activeTab` |
+| `content_scripts.matches` | Detectar vídeos automaticamente, sem clique por página | `http://*/*` e `https://*/*`; não inclui `file://` nem outros protocolos |
+
+O navegador informa esse acesso durante a instalação/atualização. O usuário pode limitar o acesso por site nas configurações do navegador ou desligar a análise automática nas opções da extensão. O acesso amplo não autoriza tráfego de rede: a análise local continua sem upload, e análise profunda/feedback continuam dependendo de ação explícita.
 
 Regra: adicionar qualquer permissão exige justificar necessidade, minimizar escopo, documentar retenção e controle aqui, e atualizar o [threat-model.md](threat-model.md).
 

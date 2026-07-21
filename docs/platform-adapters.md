@@ -20,7 +20,7 @@ export interface PlatformAdapter {
 ```
 
 - `matches(location)`: decide se este adaptador é responsável pela página atual (normalmente checando `location.hostname`).
-- `extractContext(video, doc)`: dado um `<video>` já detectado e o `Document` da página, retorna um `VideoContext` (título, descrição, hashtags, aria-labels, legendas, nome do autor, URL normalizada da página, duração). Nunca lança para conteúdo inesperado — degrada para campos vazios/`undefined`.
+- `extractContext(video, doc)`: dado um `<video>` já detectado e o `Document` da página, retorna um `VideoContext` (título, descrição, hashtags, aria-labels, legendas, autor, declarações do autor, rótulos nativos, URL e duração). Nunca lança para conteúdo inesperado — degrada para campos vazios/`undefined`.
 
 `VideoContext` está definido em `packages/shared/src/types.ts` e é o mesmo tipo consumido por `detection-core.assess()`, independentemente de qual adaptador o produziu.
 
@@ -29,7 +29,13 @@ export interface PlatformAdapter {
 `apps/extension/src/platforms/registry.ts`:
 
 ```ts
-const adapters: PlatformAdapter[] = [genericAdapter];
+const adapters: PlatformAdapter[] = [
+  youtubeAdapter,
+  tiktokAdapter,
+  instagramAdapter,
+  twitterAdapter,
+  genericAdapter,
+];
 
 export function pickAdapter(location: Location): PlatformAdapter {
   return adapters.find((adapter) => adapter.matches(location)) ?? genericAdapter;
@@ -38,29 +44,29 @@ export function pickAdapter(location: Location): PlatformAdapter {
 
 Adaptadores específicos entram na lista **antes** do `genericAdapter`, que fica sempre por último como fallback — a ordem importa porque `pickAdapter` retorna o primeiro `match`.
 
-## O adaptador genérico (Fase 1 — implementado)
+## O adaptador genérico endurecido
 
-`apps/extension/src/platforms/generic.ts` é o único adaptador desta entrega. `matches()` sempre retorna `true` (fallback universal). Extrai contexto apenas de marcação HTML padrão, sem nenhum seletor de plataforma:
+`apps/extension/src/platforms/generic.ts` é o fallback universal. Extrai somente contexto HTML associado ao vídeo e normaliza texto com Unicode NFKC:
 
 - **Título**: `document.title`, com fallback para `<meta property="og:title">`.
-- **Descrição**: concatenação de `<meta name="description">`, `<figcaption>` dentro de um `<figure>` ancestral do vídeo, e o texto do elemento pai do vídeo — truncada a 2000 caracteres.
+- **Descrição**: `<meta name="description">`, `<figcaption>` visível, alvos de `aria-describedby` e elementos explicitamente marcados com `data-bp-context`, truncada a 2000 caracteres.
 - **Hashtags**: extraídas por regex Unicode (`#\p{L}[\p{L}\p{N}_]*`) do texto coletado acima, deduplicadas e em minúsculas.
-- **Aria-labels**: sobe até 3 níveis de ancestrais do vídeo coletando `aria-label` não vazios.
+- **Aria-labels**: apenas valores visíveis e semanticamente associados ao vídeo.
 - **Legendas (`captions`)**: sempre vazio no genérico (não há convenção padrão de onde encontrá-las fora de plataformas específicas).
-- **Nome do autor**: sempre `undefined` no genérico.
+- **Declarações do autor**: somente elementos explicitamente marcados com `data-bp-author-statement`; o fallback não presume autoria a partir de texto solto.
 - **Duração**: `video.duration`, se finito.
 - **URL da página**: normalizada via `normalizeUrl()` (`packages/shared/src/url.ts`), que remove parâmetros de tracking antes de qualquer uso.
 
-Cobertura de teste: `apps/extension/src/platforms/generic.test.ts` (13 testes com fixtures de HTML variadas).
+Texto oculto e o conteúdo arbitrário do elemento pai não são coletados. Isso reduz falsos positivos por comentários, recomendações e texto de outros posts.
 
-## O que a Fase 2 adiciona
+## Adaptadores V2 implementados
 
-A Fase 2 (fora do escopo desta entrega) adiciona adaptadores dedicados para as quatro plataformas-alvo do produto, cada um em seu próprio arquivo (`youtube.ts`, `tiktok.ts`, `instagram.ts`, `twitter.ts`), registrados em `registry.ts` antes do genérico:
+A V2 inclui adaptadores dedicados em `youtube.ts`, `tiktok.ts`, `instagram.ts` e `twitter.ts`, registrados antes do fallback genérico:
 
 - Seletores de DOM específicos para título, descrição, hashtags e nome do canal/perfil de cada plataforma.
-- Extração do **rótulo nativo de IA** quando a plataforma expõe um selo próprio no DOM (produz evidência do domínio `platform_disclosure`, grupo `platform-label`, weight 0.95/confidence 0.95 — só o adaptador específico gera esse tipo; o genérico não gera `platform_disclosure`).
-- `content_scripts.matches` do manifest passa a incluir os domínios dessas plataformas (hoje cobre apenas `http://localhost/*` e `http://127.0.0.1/*`, usados pelas demos).
-- Testes de fixture por plataforma (HTML capturado/reduzido de páginas reais), seguindo o mesmo padrão de `generic.test.ts`.
+- Extração do **rótulo nativo de IA** quando a plataforma o expõe visivelmente no mesmo post do vídeo. Isso produz origem `platform_disclosure`, domínio `platform_disclosure`, grupo `platform-label`, peso `1` e confiança `0.98`.
+- `content_scripts.matches` já cobre páginas HTTP/HTTPS; novos adaptadores não precisam ampliar o acesso do manifest.
+- Testes de fixture por plataforma cobrem extração, DOM parcial e associação ao post correto; no X, o texto de um post citado não é herdado pelo vídeo externo.
 
 Mudanças de DOM nas plataformas quebram adaptadores silenciosamente com o tempo — por isso a extração degrada sempre para "Sem evidências suficientes"/"Análise inconclusiva" com a limitação registrada em `limitations`, nunca uma classificação inventada (ver `docs/threat-model.md` T7).
 
@@ -71,4 +77,4 @@ Mudanças de DOM nas plataformas quebram adaptadores silenciosamente com o tempo
 3. Implemente `extractContext()` reaproveitando utilitários de `@bp/shared` (`normalizeUrl`, tipos de `VideoContext`) — nunca duplique lógica de agregação/regras, que pertence a `detection-core`.
 4. Registre o adaptador em `registry.ts`, antes de `genericAdapter`.
 5. Adicione `<plataforma>.test.ts` com fixtures de HTML cobrindo os campos extraídos, incluindo casos de DOM ausente/inesperado (degradação graciosa).
-6. Se a plataforma precisar de content script ativo automaticamente (não só via `activeTab`), adicione o domínio em `content_scripts.matches` no `manifest.json` e documente a justificativa em `docs/privacy.md` §5.
+6. Confirme que a plataforma usa HTTP/HTTPS. Qualquer necessidade de outro protocolo exige mudança explícita no manifest e revisão de `docs/privacy.md` §5.

@@ -17,17 +17,21 @@ Status: implementada nesta branch.
 - mock visual somente em desenvolvimento e stub ONNX;
 - páginas locais de demonstração, testes e documentação de operação.
 
-Limites: sem modelo visual real, sem adaptadores específicos de plataforma e sem prova de autenticidade.
+Limites: sem modelo visual real e sem prova de autenticidade.
 
 ## Fase 2 — Adaptadores de plataforma
 
+Status: implementada na versão `0.2.0` desta branch.
+
 - adicionar adaptadores dedicados para YouTube, TikTok, Instagram e X/Twitter;
 - centralizar seletores e extrair título, descrição, autor, hashtags e rótulos nativos de IA;
-- incluir apenas os domínios necessários em `content_scripts.matches`, com justificativa de privacidade;
+- separar a origem da evidência entre rótulo da plataforma, declaração do autor e contexto genérico;
 - manter o adaptador genérico como fallback;
+- ignorar texto oculto e conteúdo genérico não associado ao vídeo;
+- mostrar o símbolo visual grande somente em `declared_ai`;
 - adicionar fixtures e testes de degradação para mudanças de DOM.
 
-Critério de saída: os adaptadores reconhecem contexto e rótulos nativos sem ampliar permissões para `<all_urls>` nem transformar ausência de sinal em autenticidade.
+Critério de saída atingido: os adaptadores reconhecem contexto e rótulos nativos sem transformar ausência de sinal em autenticidade. O acesso HTTP/HTTPS é necessário para ativação automática; a análise V2 permanece local.
 
 ## Fase 3 — Análise visual e profunda
 

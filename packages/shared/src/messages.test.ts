@@ -41,6 +41,28 @@ describe("requestMessageSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("exige a origem de cada evidência", () => {
+    const result = requestMessageSchema.safeParse({
+      kind: "CACHE_PUT",
+      key: "k",
+      assessment: {
+        ...assessment,
+        evidence: [
+          {
+            id: "legacy-evidence",
+            domain: "synthetic_media",
+            label: "Declaração sem origem",
+            contribution: 0.8,
+            confidence: 0.9,
+            explanation: "Formato antigo sem a procedência necessária na V2.",
+          },
+        ],
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("aceita SETTINGS_GET", () => {
     const result = requestMessageSchema.safeParse({ kind: "SETTINGS_GET" });
     expect(result.success).toBe(true);

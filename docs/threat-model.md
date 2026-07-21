@@ -27,7 +27,8 @@ Documentos relacionados: [privacy.md](privacy.md), [architecture.md](architectur
 A Camada 1 lê texto do DOM controlado pelo autor da página. Um autor pode: (a) omitir sinais de IA; (b) injetar texto invisível com padrões que geram falsos positivos em conteúdo de concorrentes; (c) poluir o DOM para "afogar" regras.
 
 **Mitigações**
-- Evidências de texto livre têm peso limitado (nunca produzem `declared_ai` sozinhas, exceto declaração explícita, que é interesse do próprio autor).
+- Evidências de texto livre têm origem `page_context`, peso limitado e nunca produzem `declared_ai` sozinhas. Só texto atribuído ao autor pelo adaptador recebe origem `author_statement`.
+- A extração ignora texto oculto e não coleta indiscriminadamente todo o elemento pai do vídeo.
 - Tetos de agregação impedem que muitas evidências fracas gerem classificação forte ([detection-pipeline.md](detection-pipeline.md) §5).
 - Rótulos exibidos são probabilísticos e explicáveis: o painel mostra *qual* texto gerou a evidência, permitindo ao usuário julgar.
 - Limites de tamanho na extração de contexto (campos truncados) reduzem poluição do DOM.
@@ -80,6 +81,16 @@ Mock apresentado como análise real destruiria A1/A5.
 
 **Mitigações**
 - `MockVisualDetector` só instancia com dev mode ligado; saída marcada `isMock`, label "[MOCK]", nunca persistida no cache como avaliação genuína; teste automatizado garante isolamento.
+
+### T9 — Escopo automático em páginas HTTP/HTTPS (ADV-2, bugs próprios)
+O content script é carregado automaticamente em sites HTTP/HTTPS para que os rótulos apareçam sem um clique por página. Isso aumenta a superfície de execução e pode incluir páginas autenticadas com vídeos.
+
+**Mitigações**
+- O script roda em mundo isolado, não lê cookies, tokens ou credenciais e não expõe funções no `window` da página.
+- A extração é limitada ao título, metadados e texto próximo ao elemento de vídeo; o contexto integral não é persistido.
+- Nenhum dado ou frame é enviado automaticamente. Cache guarda URL normalizada, hash de contexto e assessment com TTL e limite.
+- O usuário pode desligar a análise automática nas opções ou restringir o acesso por site nas configurações do navegador.
+- O manifesto cobre apenas HTTP/HTTPS, não `<all_urls>`.
 
 ## 4. Fora de escopo do MVP (registrado)
 

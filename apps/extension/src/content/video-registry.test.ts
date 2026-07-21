@@ -76,6 +76,27 @@ describe("VideoRegistry", () => {
     expect(firstTracked.cacheKey).not.toBe(secondTracked.cacheKey);
   });
 
+  it("inclui declarações confiáveis na identidade do contexto", () => {
+    const registry = new VideoRegistry();
+    const first = makeVideo("https://cdn.example.com/shared.mp4");
+    const second = makeVideo("https://cdn.example.com/shared.mp4");
+    const baseContext = {
+      platform: "youtube",
+      pageUrl: normalizeUrl(location.href),
+      hashtags: [],
+      ariaLabels: [],
+      captions: [],
+    };
+
+    const neutral = registry.refreshIdentity(first, "youtube", baseContext);
+    const disclosed = registry.refreshIdentity(second, "youtube", {
+      ...baseContext,
+      platformLabels: ["Conteúdo alterado ou sintético"],
+    });
+
+    expect(neutral.cacheKey).not.toBe(disclosed.cacheKey);
+  });
+
   it("invalidate remove o rastreamento", () => {
     const registry = new VideoRegistry();
     const video = makeVideo("https://cdn.example.com/a.mp4");

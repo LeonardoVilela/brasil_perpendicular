@@ -22,6 +22,8 @@ function computeCacheKey(video: HTMLVideoElement, platform: string, context?: Vi
     context?.ariaLabels ?? [],
     context?.captions ?? [],
     context?.authorName ?? "",
+    context?.authorStatements ?? [],
+    context?.platformLabels ?? [],
   ]);
   const pageUrl = normalizeUrl(context?.pageUrl ?? location.href);
   return `${platform}|${pageUrl}|${hashContext(contextInput)}`;

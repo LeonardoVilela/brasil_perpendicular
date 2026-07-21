@@ -5,6 +5,12 @@ const DECLARED_PLATFORM_DISCLOSURE_THRESHOLD = 0.9;
 const DECLARED_EXPLICIT_DECLARATION_THRESHOLD = 0.75;
 const LIKELY_AI_THRESHOLD = 0.75;
 const POSSIBLY_AI_THRESHOLD = 0.45;
+const HIGH_TRUST_ORIGINS = new Set<Evidence["origin"]>([
+  "signed_provenance",
+  "platform_disclosure",
+  "author_statement",
+  "technical_signal",
+]);
 
 const SCAM_HIGH_THRESHOLD = 0.7;
 const SCAM_MEDIUM_THRESHOLD = 0.45;
@@ -21,6 +27,25 @@ function groupEffective(evidence: Evidence[], domain: EvidenceDomain, correlatio
   return max;
 }
 
+function trustedGroupEffective(
+  evidence: Evidence[],
+  domain: EvidenceDomain,
+  correlationGroup: string,
+  origin: Evidence["origin"],
+): number {
+  return groupEffective(
+    evidence.filter((item) => item.origin === origin),
+    domain,
+    correlationGroup,
+  );
+}
+
+function hasIndependentOrigins(evidence: Evidence[]): boolean {
+  const synthetic = evidence.filter((item) => item.domain === "synthetic_media");
+  const origins = new Set(synthetic.map((item) => item.origin));
+  return origins.size >= 2 && synthetic.some((item) => HIGH_TRUST_ORIGINS.has(item.origin));
+}
+
 /**
  * Classifica evidências em uma das categorias de `docs/detection-pipeline.md` §6.
  * `score` representa somente o domínio `synthetic_media`. Divulgação de
@@ -34,14 +59,18 @@ export function classify(evidence: Evidence[], executed: string[]): { classifica
   }
 
   const declaredByPlatform =
-    groupEffective(evidence, "platform_disclosure", "platform-label") >= DECLARED_PLATFORM_DISCLOSURE_THRESHOLD;
+    trustedGroupEffective(evidence, "platform_disclosure", "platform-label", "platform_disclosure") >=
+    DECLARED_PLATFORM_DISCLOSURE_THRESHOLD;
   const declaredByAuthor =
-    groupEffective(evidence, "synthetic_media", "explicit-declaration") >= DECLARED_EXPLICIT_DECLARATION_THRESHOLD;
+    trustedGroupEffective(evidence, "synthetic_media", "explicit-declaration", "author_statement") >=
+    DECLARED_EXPLICIT_DECLARATION_THRESHOLD;
   if (declaredByPlatform || declaredByAuthor) {
     return { classification: "declared_ai", score };
   }
 
-  if (score >= LIKELY_AI_THRESHOLD) return { classification: "likely_ai", score };
+  if (score >= LIKELY_AI_THRESHOLD && hasIndependentOrigins(evidence)) {
+    return { classification: "likely_ai", score };
+  }
   if (score >= POSSIBLY_AI_THRESHOLD) return { classification: "possibly_ai", score };
   return { classification: "insufficient_evidence", score };
 }

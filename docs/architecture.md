@@ -52,8 +52,9 @@ apps/extension/src/
 ├── platforms/
 │   ├── types.ts            # PlatformAdapter, DetectedVideo, VideoContext
 │   ├── registry.ts         # seleção do adaptador ativo
-│   └── generic.ts          # fallback genérico (Fase 1)
-│   └── (youtube.ts, tiktok.ts, instagram.ts, twitter.ts — Fase 2)
+│   ├── extract.ts          # texto visível, normalização e associação ao post
+│   ├── generic.ts          # fallback genérico endurecido
+│   └── youtube.ts, tiktok.ts, instagram.ts, twitter.ts
 ├── detectors/
 │   ├── types.ts            # VisualDetector, VisualDetectionResult
 │   ├── mock.ts             # apenas dev mode; saída rotulada como mock
@@ -79,7 +80,7 @@ apps/extension/src/
 Protocolo tipado em `messaging/protocol.ts`, validado com zod na recepção:
 
 - `content ↔ service worker`: `CACHE_GET`, `CACHE_PUT`, `SETTINGS_GET`, `DEEP_ANALYZE_REQUEST`, `FEEDBACK_SUBMIT`.
-- `popup/options ↔ service worker`: `SETTINGS_GET/SET`, `PAGE_STATUS_GET`, `INJECT_CONTENT_SCRIPT` (páginas genéricas via `activeTab` + `chrome.scripting`).
+- `popup/options ↔ service worker`: `SETTINGS_GET/SET`, `PAGE_STATUS_GET`, `INJECT_CONTENT_SCRIPT` (reinjeção manual de fallback via `activeTab` + `chrome.scripting`; o bootstrap é idempotente).
 
 O service worker é a única fonte de verdade para settings e cache (`chrome.storage.local`). A pontuação roda no content script (função pura, rápida, sem rede).
 
@@ -96,6 +97,7 @@ O service worker é a única fonte de verdade para settings e cache (`chrome.sto
 
 ### D3 — Overlay: Shadow DOM + React por host
 - Host `<div>` posicionado sobre o vídeo (canto superior), com `ShadowRoot` isolando estilos (CSS injetado inline no shadow root; CSS Modules nos componentes).
+- Em `declared_ai`, a UI adiciona o asset local `Anti_AI.svg.webp` como marca visual acessível. Ele não aparece em classificações inferidas ou incertas.
 - Um root React por host; hosts existem apenas para vídeos em/perto do viewport (limite via fila). Se o número de roots virar gargalo, migrar para um root único com portais (registrado como evolução, não implementado — YAGNI).
 - `pointer-events` apenas nos elementos interativos do selo; controles nativos do player permanecem clicáveis.
 
@@ -105,9 +107,9 @@ O service worker é a única fonte de verdade para settings e cache (`chrome.sto
 
 ### D5 — Permissões mínimas (ver [privacy.md](privacy.md))
 - `permissions`: `storage`, `activeTab`, `scripting`.
-- `content_scripts.matches`: apenas plataformas-alvo (Fase 2) + `http://localhost/*` (demonstração/desenvolvimento).
-- Páginas genéricas: injeção sob demanda pelo popup (`activeTab`), nunca `<all_urls>` declarado.
-- **Alternativa rejeitada**: content script em `<all_urls>` (conveniente, mas viola menor privilégio e dificulta publicação futura).
+- `content_scripts.matches`: páginas `http://*/*` e `https://*/*`, para detectar vídeos automaticamente sem exigir um clique por página.
+- O escopo não usa `<all_urls>`: protocolos como `file://` e `ftp://` ficam fora. `activeTab` + `scripting` permanecem somente como fallback manual.
+- **Trade-off aceito**: o navegador pede acesso a todos os sites HTTP/HTTPS. A análise automática é local, limitada ao contexto de vídeos visíveis e pode ser desligada nas opções; nenhuma mídia ou contexto é enviado sem ação explícita.
 
 ### D6 — Identidade de vídeo e cache
 - `VideoIdentity` = plataforma + melhor identificador disponível (id de publicação > URL canônica do vídeo > URL normalizada da página + posição estável) + `contextHash` (FNV-1a de título|descrição|duração — hash simples de cache, sem função criptográfica).

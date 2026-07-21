@@ -22,6 +22,7 @@ function buildEvidence(rule: TextRule, field: ContextField, matchedText: string)
     weight: rule.weight,
     confidence: rule.confidence,
     correlationGroup: rule.correlationGroup,
+    origin: rule.origin,
     source: field,
   };
 }
@@ -30,6 +31,10 @@ function findMatch(context: VideoContext, rule: TextRule): Evidence | undefined 
   for (const field of rule.fields) {
     const text = fieldText(context, field);
     if (!text) continue;
+    if (rule.exclusions?.some((pattern) => {
+      if (pattern.global || pattern.sticky) pattern.lastIndex = 0;
+      return pattern.test(text);
+    })) continue;
     for (const pattern of rule.patterns) {
       // guarda: se alguma regra escapar com flag "g"/"y", zera o lastIndex compartilhado
       // antes de testar, evitando que o estado de uma chamada vaze para a próxima.
