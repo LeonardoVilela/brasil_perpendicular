@@ -5,6 +5,7 @@ import type { DetectionAssessment, MessageResponse, RequestMessage, VideoContext
 import { Badge, DetailsPanel, type OverlayState } from "@bp/ui";
 import badgeCss from "@bp/ui/src/Badge.module.css?inline";
 import detailsPanelCss from "@bp/ui/src/DetailsPanel.module.css?inline";
+import antiAiImageUrl from "../assets/anti-ai.webp?inline";
 import type { TrackedVideo } from "./video-registry";
 import baseCss from "./styles.css?inline";
 
@@ -85,6 +86,7 @@ function OverlayRoot({ video, initialState, deps, instance, onClose }: OverlayRo
       <Badge
         state={state}
         expanded={expanded}
+        certaintyImageSrc={antiAiImageUrl}
         onToggleExpand={() => setExpanded((value) => !value)}
         onMinimize={() => setMinimized(true)}
         onClose={onClose}

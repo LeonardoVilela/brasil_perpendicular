@@ -96,6 +96,9 @@ describe("OverlayManager", () => {
 
     const text = tracked.overlayHost?.shadowRoot?.textContent ?? "";
     expect(text).toContain(STATE_STRINGS.declared_ai.label);
+    const image = tracked.overlayHost?.shadowRoot?.querySelector("img");
+    expect(image?.getAttribute("alt")).toBe("Conteúdo declarado como gerado por IA");
+    expect(image?.getAttribute("src")).toMatch(/^data:image\/webp;base64,/);
   });
 
   it("remove desmonta o React e limpa o host do DOM", () => {

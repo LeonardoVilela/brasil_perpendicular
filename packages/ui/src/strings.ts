@@ -28,11 +28,21 @@ export const CONFIDENCE_STRINGS = {
 
 export const ANALYSIS_STRINGS: Record<string, string> = {
   context_rules: "Regras de contexto",
+  platform_adapter: "Metadados do post na plataforma",
   visual_model: "Modelo visual",
   provenance: "Procedência",
 };
 
+export const ORIGIN_STRINGS = {
+  signed_provenance: "proveniência assinada",
+  platform_disclosure: "rótulo da plataforma",
+  author_statement: "declaração do autor",
+  page_context: "contexto da página",
+  technical_signal: "análise técnica",
+} as const;
+
 export const BADGE_STRINGS = {
+  certaintyImageAlt: "Conteúdo declarado como gerado por IA",
   expandLabel: "Expandir detalhes",
   collapseLabel: "Recolher detalhes",
   minimizeLabel: "Minimizar",
@@ -49,6 +59,7 @@ export const PANEL_STRINGS = {
   classificationLabel: "Classificação:",
   confidenceLabel: "Confiança:",
   evidenceSection: "Evidências encontradas",
+  evidenceOriginLabel: "Origem:",
   executedSection: "Análises executadas",
   unavailableSection: "Análises indisponíveis",
   limitationsSection: "Limitações",

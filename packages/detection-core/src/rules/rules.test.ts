@@ -26,7 +26,7 @@ describe("defaultRules", () => {
   });
 
   it("expõe a versão do conjunto de regras", () => {
-    expect(RULESET_VERSION).toBe("0.1.0");
+    expect(RULESET_VERSION).toBe("0.2.0");
   });
 
   it("nenhum padrão usa a flag 'g' (estado compartilhado quebraria .test()/.exec())", () => {
@@ -77,6 +77,8 @@ describe("declarations", () => {
   it.each([
     "este vídeo foi gerado por IA",
     "conteúdo criado com IA",
+    "conteúdo feito com IA",
+    "vídeo produzido com IA",
     "isto é conteúdo sintético",
     "este é um vídeo de IA",
     "this is AI generated content",
@@ -86,6 +88,40 @@ describe("declarations", () => {
   ])("detecta declaração explícita em: %s", (description) => {
     const evidence = runRules(makeContext({ description }), declarationRules);
     expect(evidence).toHaveLength(1);
+    expect(evidence[0]?.origin).toBe("page_context");
+  });
+
+  it("marca separadamente declaração atribuída ao autor", () => {
+    const evidence = runRules(
+      makeContext({ authorStatements: ["Este vídeo foi gerado por IA"] }),
+      declarationRules,
+    );
+    expect(evidence).toHaveLength(1);
+    expect(evidence[0]?.origin).toBe("author_statement");
+  });
+
+  it.each([
+    "este vídeo não foi gerado por IA",
+    "o conteúdo nao foi feito com IA",
+    "this video was not AI-generated",
+  ])("não transforma negação em declaração: %s", (description) => {
+    const evidence = runRules(
+      makeContext({ description, authorStatements: [description] }),
+      declarationRules,
+    );
+    expect(evidence).toHaveLength(0);
+  });
+
+  it("reconhece divulgação nativa da plataforma", () => {
+    const evidence = runRules(
+      makeContext({ platformLabels: ["Conteúdo alterado ou sintético"] }),
+      declarationRules,
+    );
+    expect(evidence).toHaveLength(1);
+    expect(evidence[0]).toMatchObject({
+      domain: "platform_disclosure",
+      origin: "platform_disclosure",
+    });
   });
 
   it("não casa em texto sem declaração explícita", () => {

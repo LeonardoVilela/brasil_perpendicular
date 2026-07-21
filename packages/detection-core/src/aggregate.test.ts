@@ -12,6 +12,7 @@ function makeEvidence(overrides: Partial<Evidence> = {}): Evidence {
     weight: 0.5,
     confidence: 0.8,
     correlationGroup: "test-group",
+    origin: "page_context",
     ...overrides,
   };
 }

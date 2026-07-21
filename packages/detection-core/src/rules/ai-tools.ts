@@ -27,6 +27,7 @@ export const aiToolRules: TextRule[] = [
     weight: 0.6,
     confidence: 0.9,
     correlationGroup: "ai-tool-mention",
+    origin: "page_context",
     evidenceType: "description",
     label: "Menção a ferramenta de geração por IA",
     descriptionTemplate: 'O texto menciona "{match}", nome associado a ferramentas de geração de vídeo ou imagem por IA.',

@@ -15,12 +15,40 @@ function makeContext(overrides: Partial<VideoContext> = {}): VideoContext {
 }
 
 describe("assess", () => {
-  it('"gerado por IA" na descrição ⇒ declared_ai', () => {
+  it('"gerado por IA" em contexto genérico não é tratado como declaração do autor', () => {
     const result = assess(
       makeContext({ title: "Meu vídeo", description: "este conteúdo foi gerado por IA" }),
     );
+    expect(result.classification).toBe("possibly_ai");
+    expect(result.evidence[0]?.origin).toBe("page_context");
+  });
+
+  it('"gerado por IA" em declaração do autor ⇒ declared_ai', () => {
+    const result = assess(
+      makeContext({
+        title: "Meu vídeo",
+        description: "este conteúdo foi gerado por IA",
+        authorStatements: ["este conteúdo foi gerado por IA"],
+      }),
+    );
     expect(result.classification).toBe("declared_ai");
     expect(result.confidence).toBe("high");
+    expect(result.evidence.some((item) => item.origin === "author_statement")).toBe(true);
+  });
+
+  it("negação do autor não produz declared_ai", () => {
+    const result = assess(
+      makeContext({ authorStatements: ["Este vídeo não foi feito com IA"] }),
+    );
+    expect(result.classification).toBe("insufficient_evidence");
+  });
+
+  it("rótulo nativo da plataforma ⇒ declared_ai", () => {
+    const result = assess(
+      makeContext({ platform: "youtube", platformLabels: ["Conteúdo alterado ou sintético"] }),
+    );
+    expect(result.classification).toBe("declared_ai");
+    expect(result.evidence.some((item) => item.origin === "platform_disclosure")).toBe(true);
   });
 
   it("ferramenta de IA + hashtag de IA ⇒ possibly_ai (score entre 0.45 e 0.75)", () => {
@@ -121,6 +149,7 @@ describe("assess", () => {
       weight: 0.9,
       confidence: 0.9,
       correlationGroup: "custom-group",
+      origin: "page_context" as const,
       evidenceType: "description" as const,
       label: "Regra customizada",
       descriptionTemplate: 'Contém "{match}".',

@@ -12,6 +12,7 @@ function makeEvidence(overrides: Partial<Evidence> = {}): Evidence {
     weight: 0.5,
     confidence: 0.8,
     correlationGroup: "test-group",
+    origin: "page_context",
     ...overrides,
   };
 }
@@ -28,6 +29,7 @@ describe("classify", () => {
       makeEvidence({
         domain: "platform_disclosure",
         correlationGroup: "platform-label",
+        origin: "platform_disclosure",
         weight: 1,
         confidence: 0.9,
       }),
@@ -37,11 +39,12 @@ describe("classify", () => {
     expect(result.score).toBe(0);
   });
 
-  it("declared_ai quando grupo explicit-declaration (synthetic_media) >= 0.75 (0.85*0.9=0.765)", () => {
+  it("declared_ai quando a declaração explícita pertence ao autor", () => {
     const evidence = [
       makeEvidence({
         domain: "synthetic_media",
         correlationGroup: "explicit-declaration",
+        origin: "author_statement",
         weight: 0.85,
         confidence: 0.9,
       }),
@@ -50,24 +53,33 @@ describe("classify", () => {
     expect(result.classification).toBe("declared_ai");
   });
 
-  it("não dispara declared_ai por explicit-declaration abaixo de 0.75", () => {
+  it("não dispara declared_ai por declaração encontrada em contexto genérico", () => {
     const evidence = [
       makeEvidence({
         domain: "synthetic_media",
         correlationGroup: "explicit-declaration",
-        weight: 0.7,
+        origin: "page_context",
+        weight: 0.85,
         confidence: 0.9,
-      }), // 0.63
+      }),
     ];
     const result = classify(evidence, ["context_rules"]);
     expect(result.classification).not.toBe("declared_ai");
   });
 
-  it("likely_ai quando S >= 0.75", () => {
-    const evidence = [makeEvidence({ correlationGroup: "a", weight: 1, confidence: 0.9 })]; // 0.9, forte
+  it("likely_ai exige duas origens independentes, uma delas de alta confiança", () => {
+    const evidence = [
+      makeEvidence({ correlationGroup: "a", origin: "technical_signal", weight: 1, confidence: 0.9 }),
+      makeEvidence({ id: "b", correlationGroup: "b", origin: "page_context", weight: 0.6, confidence: 0.9 }),
+    ];
     const result = classify(evidence, ["context_rules"]);
     expect(result.classification).toBe("likely_ai");
     expect(result.score).toBeGreaterThanOrEqual(0.75);
+  });
+
+  it("um único sinal forte de contexto não vira likely_ai", () => {
+    const evidence = [makeEvidence({ correlationGroup: "a", weight: 1, confidence: 0.9 })];
+    expect(classify(evidence, ["context_rules"]).classification).toBe("possibly_ai");
   });
 
   it("possibly_ai quando 0.45 <= S < 0.75 (ferramenta + hashtag)", () => {

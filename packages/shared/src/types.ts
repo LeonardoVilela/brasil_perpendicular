@@ -2,6 +2,13 @@ export type EvidenceDomain =
   | "synthetic_media" | "provenance" | "platform_disclosure"
   | "scam_context" | "fact_check" | "technical_availability";
 
+export type EvidenceOrigin =
+  | "signed_provenance"
+  | "platform_disclosure"
+  | "author_statement"
+  | "page_context"
+  | "technical_signal";
+
 export interface Evidence {
   id: string;
   domain: EvidenceDomain;
@@ -12,6 +19,7 @@ export interface Evidence {
   weight: number;       // 0..1
   confidence: number;   // 0..1
   correlationGroup: string;
+  origin: EvidenceOrigin;
   source?: string;
 }
 
@@ -44,6 +52,8 @@ export interface VideoContext {
   hashtags: string[];
   ariaLabels: string[];
   captions: string[];
+  authorStatements?: string[];
+  platformLabels?: string[];
   authorName?: string;
   durationSeconds?: number;
 }

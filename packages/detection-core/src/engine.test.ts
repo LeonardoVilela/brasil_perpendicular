@@ -22,6 +22,7 @@ const soraRule: TextRule = {
   weight: 0.6,
   confidence: 0.9,
   correlationGroup: "ai-tool-mention",
+  origin: "page_context",
   evidenceType: "description",
   label: "Menção a ferramenta de IA",
   descriptionTemplate: 'O texto menciona "{match}".',
@@ -34,6 +35,7 @@ describe("runRules", () => {
     expect(evidence[0]?.description).toContain("Sora");
     expect(evidence[0]?.id).toBe("test-sora");
     expect(evidence[0]?.source).toBe("description");
+    expect(evidence[0]?.origin).toBe("page_context");
   });
 
   it("uma regra gera no máximo uma evidência mesmo casando em vários campos", () => {

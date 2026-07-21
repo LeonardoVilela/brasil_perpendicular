@@ -1,6 +1,13 @@
 import { useState } from "react";
 import type { DetectionAssessment } from "@bp/shared";
-import { ANALYSIS_STRINGS, CONFIDENCE_STRINGS, DISCLAIMER, PANEL_STRINGS, STATE_STRINGS } from "./strings";
+import {
+  ANALYSIS_STRINGS,
+  CONFIDENCE_STRINGS,
+  DISCLAIMER,
+  ORIGIN_STRINGS,
+  PANEL_STRINGS,
+  STATE_STRINGS,
+} from "./strings";
 import styles from "./DetailsPanel.module.css";
 
 export interface DetailsPanelProps {
@@ -38,7 +45,10 @@ export function DetailsPanel({ assessment, deepAnalysisEnabled, onDeepAnalyze, o
         <ul>
           {assessment.evidence.map((item) => (
             <li key={item.id}>
-              <strong>{item.label}</strong>: {item.description}
+              <strong>{item.label}</strong>: {item.description}{" "}
+              <small>
+                {PANEL_STRINGS.evidenceOriginLabel} {ORIGIN_STRINGS[item.origin]}
+              </small>
             </li>
           ))}
         </ul>

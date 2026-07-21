@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { DetectionAssessment } from "@bp/shared";
 import { DetailsPanel } from "./DetailsPanel";
-import { CONFIDENCE_STRINGS, DISCLAIMER, PANEL_STRINGS, STATE_STRINGS } from "./strings";
+import { CONFIDENCE_STRINGS, DISCLAIMER, ORIGIN_STRINGS, PANEL_STRINGS, STATE_STRINGS } from "./strings";
 
 function makeAssessment(overrides: Partial<DetectionAssessment> = {}): DetectionAssessment {
   return {
@@ -21,6 +21,7 @@ function makeAssessment(overrides: Partial<DetectionAssessment> = {}): Detection
         weight: 0.8,
         confidence: 0.9,
         correlationGroup: "platform",
+        origin: "platform_disclosure",
       },
     ],
     executedAnalyses: ["Verificação de rótulo da plataforma"],
@@ -52,6 +53,9 @@ describe("DetailsPanel", () => {
     );
     expect(screen.getByText(PANEL_STRINGS.evidenceSection)).toBeTruthy();
     expect(screen.getByText("Rótulo da plataforma")).toBeTruthy();
+    expect(
+      screen.getByText(`Origem: ${ORIGIN_STRINGS.platform_disclosure}`),
+    ).toBeTruthy();
   });
 
   it("mostra análises executadas e indisponíveis", () => {

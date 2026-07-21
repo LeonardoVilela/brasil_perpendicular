@@ -21,6 +21,7 @@ export const hashtagRules: TextRule[] = [
     weight: 0.45,
     confidence: 0.85,
     correlationGroup: "ai-hashtag",
+    origin: "page_context",
     evidenceType: "hashtag",
     label: "Hashtag associada a conteúdo de IA",
     descriptionTemplate: 'A hashtag "{match}" costuma indicar conteúdo relacionado a IA.',

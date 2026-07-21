@@ -58,19 +58,58 @@ describe("genericAdapter", () => {
     expect(ctx.description).toContain("Legenda da figura");
   });
 
-  it("description inclui o texto do container pai imediato do vídeo", () => {
+  it("description não inclui texto arbitrário do container pai", () => {
     document.body.innerHTML = "<div>Texto ao redor do vídeo <video></video></div>";
     const video = document.querySelector("video")!;
     const ctx = genericAdapter.extractContext(video, document);
-    expect(ctx.description).toContain("Texto ao redor do vídeo");
+    expect(ctx.description).toBeUndefined();
   });
 
   it("description é limitada a 2000 caracteres no total", () => {
     const longText = "a".repeat(3000);
-    document.body.innerHTML = `<div>${longText}<video></video></div>`;
+    setMeta(longText, "name", "description");
+    document.body.innerHTML = "<video></video>";
     const video = document.querySelector("video")!;
     const ctx = genericAdapter.extractContext(video, document);
     expect(ctx.description).toHaveLength(2000);
+  });
+
+  it("ignora texto oculto mesmo quando está em figcaption", () => {
+    document.body.innerHTML = `
+      <figure>
+        <video></video>
+        <figcaption hidden>Este vídeo foi gerado por IA</figcaption>
+      </figure>
+    `;
+    const ctx = genericAdapter.extractContext(document.querySelector("video")!, document);
+    expect(ctx.description).toBeUndefined();
+  });
+
+  it("inclui texto visível apontado por aria-describedby", () => {
+    document.body.innerHTML = `
+      <video aria-describedby="video-description"></video>
+      <p id="video-description">Descrição associada ao vídeo</p>
+    `;
+    const ctx = genericAdapter.extractContext(document.querySelector("video")!, document);
+    expect(ctx.description).toContain("Descrição associada ao vídeo");
+  });
+
+  it("atribui autoria somente quando a página marca explicitamente o texto", () => {
+    document.body.innerHTML = `
+      <figure>
+        <video></video>
+        <figcaption data-bp-author-statement>Este vídeo foi gerado por IA</figcaption>
+      </figure>
+    `;
+    const ctx = genericAdapter.extractContext(document.querySelector("video")!, document);
+    expect(ctx.authorStatements).toEqual(["Este vídeo foi gerado por IA"]);
+  });
+
+  it("normaliza Unicode e espaços antes de retornar o contexto", () => {
+    setMeta("  Conteúdo\u00a0 criado   com IA  ", "name", "description");
+    document.body.innerHTML = "<video></video>";
+    const ctx = genericAdapter.extractContext(document.querySelector("video")!, document);
+    expect(ctx.description).toBe("Conteúdo criado com IA");
   });
 
   it("extrai hashtags via regex, incluindo acentuadas, deduplicadas e em minúsculas", () => {

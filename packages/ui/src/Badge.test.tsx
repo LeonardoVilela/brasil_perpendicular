@@ -54,4 +54,30 @@ describe("Badge", () => {
     await user.click(screen.getByRole("button", { name: "Expandir detalhes" }));
     expect(onToggleExpand).toHaveBeenCalledTimes(1);
   });
+
+  it("mostra a marca visual somente quando há declaração confiável de IA", () => {
+    const { rerender } = render(
+      <Badge
+        state="possibly_ai"
+        expanded={false}
+        certaintyImageSrc="data:image/webp;base64,teste"
+        onToggleExpand={noop}
+        onMinimize={noop}
+        onClose={noop}
+      />,
+    );
+    expect(screen.queryByRole("img", { name: "Conteúdo declarado como gerado por IA" })).toBeNull();
+
+    rerender(
+      <Badge
+        state="declared_ai"
+        expanded={false}
+        certaintyImageSrc="data:image/webp;base64,teste"
+        onToggleExpand={noop}
+        onMinimize={noop}
+        onClose={noop}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "Conteúdo declarado como gerado por IA" })).toBeTruthy();
+  });
 });
