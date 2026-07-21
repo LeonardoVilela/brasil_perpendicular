@@ -1,0 +1,36 @@
+{
+  "name": "brasil-perpendicular",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/extension"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit -p packages/shared && tsc --noEmit -p packages/detection-core && tsc --noEmit -p packages/ui && tsc --noEmit -p apps/extension",
+    "build": "npm run build -w extension",
+    "demo": "http-server scripts/demo -p 8080 -c-1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vitest": "^3.2.4",
+    "@vitest/coverage-v8": "^3.2.4",
+    "happy-dom": "^20.10.6",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "eslint": "^10.7.0",
+    "prettier": "^3.9.5",
+    "eslint-config-prettier": "^10.1.8",
+    "@typescript-eslint/eslint-plugin": "^8.64.0",
+    "@typescript-eslint/parser": "^8.64.0",
+    "http-server": "^14.1.1"
+  },
+  "overrides": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

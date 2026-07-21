@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Vídeo de origem cruzada sem cabeçalho CORS liberado, usado para testar degradação da análise visual.">
+  <title>Vídeo sem CORS — demonstração</title>
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+  <nav class="back"><a href="index.html">← Voltar ao índice</a></nav>
+  <h1>Vídeo de origem cruzada sem CORS liberado</h1>
+  <p>
+    O vídeo abaixo vem de um domínio diferente do desta página e é carregado
+    <strong>sem</strong> o atributo <code>crossorigin</code>. Isso deixa o
+    <code>&lt;canvas&gt;</code> "contaminado" (tainted) se algum código tentar
+    ler os pixels do vídeo — cenário típico de player embutido de terceiros.
+  </p>
+
+  <div class="note">
+    A extração de frames para análise visual (Fase 3, ainda não implementada
+    nesta entrega) deve degradar graciosamente aqui: quando o acesso ao
+    canvas falhar por CORS, a análise visual deve ficar marcada como
+    indisponível, sem quebrar a página nem travar a extensão. As regras de
+    contexto (texto ao redor do vídeo) continuam funcionando normalmente,
+    pois não dependem de acesso a pixels.
+  </div>
+
+  <video controls width="480">
+    <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
+    <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm" type="video/webm">
+    Seu navegador não suporta reprodução de vídeo HTML5.
+  </video>
+</body>
+</html>

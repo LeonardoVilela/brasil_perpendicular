@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Player customizado de exemplo, sem conteúdo de IA.">
+  <title>Player customizado — demonstração</title>
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+  <nav class="back"><a href="index.html">← Voltar ao índice</a></nav>
+  <h1>Vídeo dentro de um player com controles próprios</h1>
+  <p>
+    O vídeo abaixo está dentro de um contêiner posicionado
+    (<code>position: relative</code>) com uma barra de controles falsa,
+    sobreposta na parte de baixo, no estilo de players customizados de
+    plataformas de vídeo. O selo da extensão aparece no canto superior
+    esquerdo do vídeo; os botões abaixo devem continuar clicáveis
+    normalmente, sem o selo bloqueá-los.
+  </p>
+
+  <div class="player-wrapper">
+    <video id="player-video" width="480" crossorigin="anonymous">
+      <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
+      <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm" type="video/webm">
+      Seu navegador não suporta reprodução de vídeo HTML5.
+    </video>
+    <div class="custom-controls">
+      <button id="play-pause-btn" type="button">▶ Reproduzir</button>
+      <div class="seek-track" aria-hidden="true"></div>
+      <button id="mute-btn" type="button">🔊 Mudo</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const video = document.getElementById("player-video");
+      const playPauseBtn = document.getElementById("play-pause-btn");
+      const muteBtn = document.getElementById("mute-btn");
+
+      playPauseBtn.addEventListener("click", () => {
+        if (video.paused) {
+          video.play();
+          playPauseBtn.textContent = "⏸ Pausar";
+        } else {
+          video.pause();
+          playPauseBtn.textContent = "▶ Reproduzir";
+        }
+      });
+
+      muteBtn.addEventListener("click", () => {
+        video.muted = !video.muted;
+        muteBtn.textContent = video.muted ? "🔇 Ativar som" : "🔊 Mudo";
+      });
+    })();
+  </script>
+</body>
+</html>
