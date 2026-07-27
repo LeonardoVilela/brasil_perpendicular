@@ -35,8 +35,7 @@ class ContextPayload(BaseModel):
     @model_validator(mode="after")
     def check_total_text_length(self) -> "ContextPayload":
         # Defesa em profundidade: com os limites de campo acima o total nunca
-        # ultrapassa 15 500 caracteres, mas o limite de 20 000 é o contrato
-        # documentado em docs/detection-pipeline.md §8 e fica explícito aqui.
+        # ultrapassa 15 500 caracteres, mas o limite explícito é 20 000.
         total = len(self.title or "") + len(self.description or "") + sum(
             len(tag) for tag in self.hashtags
         )

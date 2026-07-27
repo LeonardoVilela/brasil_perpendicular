@@ -74,7 +74,7 @@ export async function requestDeepVisualAnalysis(
 
 /**
  * Análise profunda opcional (opt-in) via contexto textual. Nunca envia frames
- * ou vídeo — só o contrato de docs/detection-pipeline.md §8.
+ * ou vídeo.
  */
 export async function requestDeepAnalysis(
   ctx: VideoContext,

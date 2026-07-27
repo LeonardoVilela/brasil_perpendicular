@@ -3,7 +3,7 @@ import { TEXT_FIELDS, type TextRule } from "./types";
 
 // Padrões textuais associados a golpes comuns em vídeos e descrições no Brasil.
 // Domínio separado (scam_context): risco de golpe nunca entra no score de
-// synthetic_media — são evidências independentes (ver docs/detection-pipeline.md §5).
+// synthetic_media — são evidências independentes.
 export const scamRules: TextRule[] = [
   {
     id: "scam-indemnity",

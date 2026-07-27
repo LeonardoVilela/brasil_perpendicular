@@ -20,7 +20,7 @@ stall = [
 dev = [
     "pytest",
     "httpx",
-    "ruff",
+    "ruff==0.15.22",
     "mypy",
 ]
 

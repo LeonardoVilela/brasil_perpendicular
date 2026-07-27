@@ -219,6 +219,7 @@ coverage/
 .env
 /release/
 /tmp/
+/docs/
 
 # Runtime data
 apps/api/data/feedback.jsonl

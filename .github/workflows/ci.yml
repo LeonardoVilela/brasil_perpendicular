@@ -1,0 +1,196 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  node_checks:
+    name: Node
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+
+  python_checks:
+    name: Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: apps/api/pyproject.toml
+      - run: python -m pip install -e ".[dev]"
+        working-directory: apps/api
+      - run: python -m pytest
+        working-directory: apps/api
+      - run: python -m ruff check . --output-format=github
+        working-directory: apps/api
+      - run: python -m mypy app
+        working-directory: apps/api
+
+  promote_feature:
+    name: Feature para develop
+    needs:
+      - node_checks
+      - python_checks
+    if: github.event_name == 'push' && startsWith(github.ref_name, 'feature/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      SOURCE_BRANCH: ${{ github.ref_name }}
+      SOURCE_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Criar merge commit local
+        id: merge
+        shell: bash
+        run: |
+          git fetch origin develop
+          git checkout -B develop origin/develop
+          if git merge-base --is-ancestor "$SOURCE_SHA" HEAD; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git merge --no-ff "$SOURCE_SHA" -m "merge: $SOURCE_BRANCH into develop"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: apps/api/pyproject.toml
+      - run: python -m pip install -e ".[dev]"
+        working-directory: apps/api
+      - run: python -m pytest
+        working-directory: apps/api
+      - run: python -m ruff check . --output-format=github
+        working-directory: apps/api
+      - run: python -m mypy app
+        working-directory: apps/api
+      - name: Publicar develop
+        if: steps.merge.outputs.changed == 'true'
+        run: git push origin HEAD:develop
+
+  open_main_pr:
+    name: Develop para main
+    needs:
+      - node_checks
+      - python_checks
+      - promote_feature
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      needs.node_checks.result == 'success' &&
+      needs.python_checks.result == 'success' &&
+      (
+        github.ref_name == 'develop' ||
+        (
+          startsWith(github.ref_name, 'feature/') &&
+          needs.promote_feature.result == 'success'
+        )
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Verificar diferença e merge com main
+        id: compare
+        shell: bash
+        run: |
+          git fetch origin main develop
+          if [ "$(git rev-list --count origin/main..origin/develop)" -eq 0 ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git merge --no-commit --no-ff origin/develop
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v6
+        if: steps.compare.outputs.changed == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.compare.outputs.changed == 'true'
+        run: npm ci
+      - if: steps.compare.outputs.changed == 'true'
+        run: npm run verify
+      - uses: actions/setup-python@v6
+        if: steps.compare.outputs.changed == 'true'
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: apps/api/pyproject.toml
+      - if: steps.compare.outputs.changed == 'true'
+        run: python -m pip install -e ".[dev]"
+        working-directory: apps/api
+      - if: steps.compare.outputs.changed == 'true'
+        run: python -m pytest
+        working-directory: apps/api
+      - if: steps.compare.outputs.changed == 'true'
+        run: python -m ruff check . --output-format=github
+        working-directory: apps/api
+      - if: steps.compare.outputs.changed == 'true'
+        run: python -m mypy app
+        working-directory: apps/api
+      - name: Abrir ou reutilizar pull request
+        if: steps.compare.outputs.changed == 'true'
+        shell: bash
+        run: |
+          existing=$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head develop \
+            --state open \
+            --json url \
+            --jq '.[0].url // empty')
+          if [ -n "$existing" ]; then
+            echo "Pull request existente: $existing"
+          else
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base main \
+              --head develop \
+              --title "chore: promover develop para main" \
+              --body "Promoção automática após testes, lint, typecheck e build."
+          fi
