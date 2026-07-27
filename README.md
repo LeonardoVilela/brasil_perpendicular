@@ -28,10 +28,7 @@ packages/
   ui/                  # @bp/ui — componentes React de apresentação
 scripts/
   demo/                # páginas HTML locais para teste manual
-docs/                  # arquitetura, pipeline de detecção, privacidade, ameaças, plano
 ```
-
-Detalhes de arquitetura, decisões e convenções de código: [`docs/architecture.md`](docs/architecture.md).
 
 ## Pré-requisitos
 
@@ -81,9 +78,14 @@ npm run build           # equivalente a: npm run build -w extension
 
 O build da extensão roda três passes do Vite (worker ONNX, content script em IIFE e service worker/popup/options como ESM) e gera `apps/extension/dist/`.
 
-Para gerar o ZIP de produção com a API HTTPS correta, siga
-[`docs/chrome-web-store.md`](docs/chrome-web-store.md). O modelo ONNX leve e o
-runtime WASM vão dentro do pacote; o STALL/DINOv3 continua na API do projeto.
+Para gerar o ZIP de produção com a API HTTPS correta:
+
+```powershell
+npm run package:extension -- -ApiUrl "https://api.seudominio.com"
+```
+
+O modelo ONNX leve e o runtime WASM vão dentro do pacote; o STALL/DINOv3
+continua na API do projeto.
 
 ## Carregar a extensão no Chrome ou Brave
 
@@ -124,7 +126,7 @@ Serve `scripts/demo/` em `http://localhost:8080`. Abra `http://localhost:8080` e
 
 ## Como adicionar um adaptador de plataforma
 
-Veja o guia completo em [`docs/platform-adapters.md`](docs/platform-adapters.md). Resumo:
+Resumo:
 
 1. Implemente a interface `PlatformAdapter` (`apps/extension/src/platforms/types.ts`) em um novo arquivo, ex. `apps/extension/src/platforms/youtube.ts`.
 2. Registre o adaptador em `apps/extension/src/platforms/registry.ts`, **antes** do `genericAdapter` (que permanece como último fallback).
@@ -133,7 +135,7 @@ Veja o guia completo em [`docs/platform-adapters.md`](docs/platform-adapters.md)
 
 ## Como integrar um modelo de detecção visual
 
-Veja o contrato completo em [`docs/detection-pipeline.md`](docs/detection-pipeline.md) §7 e o guia em [`docs/model-integration.md`](docs/model-integration.md). Resumo:
+Contrato mínimo:
 
 1. Implemente a interface `VisualDetector` (`apps/extension/src/detectors/types.ts`): `name`, `version`, `isMock`, `initialize()`, `analyzeFrames(frames)`.
 2. Nunca produza saída sem rótulo `isMock` correto; um detector mock só pode ser instanciado com `devMode = true` e deve prefixar avisos/labels com `[MOCK]`.

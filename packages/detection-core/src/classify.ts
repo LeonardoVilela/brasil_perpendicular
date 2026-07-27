@@ -58,7 +58,7 @@ function hasStrictStallSignal(evidence: Evidence[]): boolean {
 }
 
 /**
- * Classifica evidências em uma das categorias de `docs/detection-pipeline.md` §6.
+ * Classifica evidências nas categorias públicas do produto.
  * `score` representa somente o domínio `synthetic_media`. Divulgação de
  * plataforma permanece separada e participa apenas do gatilho `declared_ai`.
  */

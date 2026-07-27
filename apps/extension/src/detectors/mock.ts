@@ -8,7 +8,7 @@ const MOCK_WARNING = "[MOCK] resultado fixo de desenvolvimento";
  * Detector visual falso, só para desenvolvimento e testes. Saída fixa e
  * determinística, nunca representa uma análise real — por isso só pode ser
  * instanciado com devMode ativo, e todo resultado carrega isMock: true e o
- * aviso "[MOCK]" (docs/detection-pipeline.md §7).
+ * aviso "[MOCK]".
  */
 export class MockVisualDetector implements VisualDetector {
   readonly name = "mock-visual-detector";

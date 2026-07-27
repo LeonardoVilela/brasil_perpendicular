@@ -6,7 +6,7 @@ import type { Evidence, EvidenceDomain } from "@bp/shared";
  * Evidências correlacionadas (mesmo `correlationGroup`) nunca somam — o grupo vale
  * o máximo (`weight × confidence`) entre elas. Grupos independentes combinam por
  * noisy-OR. Tetos de composição evitam que muitos sinais fracos/médios produzam um
- * score alto sem nenhum sinal realmente forte (docs/detection-pipeline.md §5).
+ * score alto sem nenhum sinal realmente forte.
  */
 export function aggregateDomain(evidence: Evidence[], domain: EvidenceDomain): number {
   const groups = new Map<string, number>();

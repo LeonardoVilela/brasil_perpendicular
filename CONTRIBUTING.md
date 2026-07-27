@@ -35,7 +35,7 @@ Não existe script que rode as duas suítes (TS e Python) juntas — rode ambas 
 
 ## Estilo de código
 
-O estilo de código está definido em [`docs/architecture.md` §5 (Convenções)](docs/architecture.md#5-convenções). Pontos centrais:
+Pontos centrais:
 
 - TypeScript strict em todos os pacotes; `any` proibido sem justificativa em comentário.
 - ESLint + Prettier na raiz; Ruff + mypy (`strict = true`) na API.
