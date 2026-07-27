@@ -217,6 +217,10 @@ dist/
 coverage/
 *.tsbuildinfo
 .env
+/release/
+/tmp/
 
 # Runtime data
 apps/api/data/feedback.jsonl
+apps/api/data/stall-cache.sqlite3*
+data/stall-cache.sqlite3*

@@ -42,6 +42,7 @@ export interface DetectionAssessment {
   assessmentVersion: string;
   rulesetVersion: string;
   detectorVersions: Record<string, string>;
+  analysisDetails?: AnalysisDetail[];
 }
 
 export interface VideoContext {
@@ -56,4 +57,52 @@ export interface VideoContext {
   platformLabels?: string[];
   authorName?: string;
   durationSeconds?: number;
+}
+
+export type VisualDecision = "ai_like" | "real_like" | "uncertain" | "unavailable";
+
+export type DeepAnalysisReason =
+  | "political_context"
+  | "local_positive"
+  | "local_uncertain"
+  | "local_unavailable"
+  | "signal_conflict"
+  | "manual_request";
+
+export interface AnalysisDetail {
+  analysis: "d3_visual" | "stall_visual" | "political_routing";
+  detector?: string;
+  version?: string;
+  backend?: "webgpu" | "wasm" | "remote" | "unavailable";
+  sampledFrames?: number;
+  usableFrames?: number;
+  reason?: DeepAnalysisReason;
+}
+
+export interface DeepVisualRequest {
+  frames: string[];
+  frameFingerprint: string;
+  sampleRateFps: 8;
+  durationSeconds: 2;
+  localDetector?: {
+    name: string;
+    version: string;
+    decision: VisualDecision;
+    score: number;
+  };
+  reason: DeepAnalysisReason;
+}
+
+export interface DeepVisualResult {
+  status: "analyzed" | "unavailable";
+  detector: "stall-dinov3-vitl16";
+  detectorVersion: string;
+  calibrationVersion: string;
+  spatialScore?: number;
+  temporalScore?: number;
+  syntheticScore?: number;
+  decision?: Exclude<VisualDecision, "unavailable">;
+  confidence?: number;
+  sampledFrames: number;
+  warnings: string[];
 }

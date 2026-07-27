@@ -108,4 +108,25 @@ describe("AnalysisQueue", () => {
       process.off("unhandledRejection", onUnhandled);
     }
   });
+
+  it("inicia prioridade alta antes de jobs normais ainda pendentes", async () => {
+    const queue = new AnalysisQueue(1);
+    const gate = deferred();
+    const order: string[] = [];
+    queue.enqueue(async () => {
+      order.push("running");
+      await gate.promise;
+    });
+    queue.enqueue(async () => {
+      order.push("normal");
+    });
+    queue.enqueue(async () => {
+      order.push("high");
+    }, "high");
+
+    gate.resolve();
+    await flushMicrotasks();
+    await flushMicrotasks();
+    expect(order).toEqual(["running", "high", "normal"]);
+  });
 });

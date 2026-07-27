@@ -1,0 +1,35 @@
+{
+  "name": "d3-mobilenetv3",
+  "version": "2026.07.25-experimental",
+  "architecture": "mobilenetv3_large_100.ra_in1k",
+  "input": {
+    "shape": [null, 3, 224, 224],
+    "resizeShortSide": 256,
+    "crop": 224,
+    "mean": [0.485, 0.456, 0.406],
+    "std": [0.229, 0.224, 0.225]
+  },
+  "output": {
+    "name": "embedding",
+    "dimensions": 1280
+  },
+  "source": {
+    "d3Commit": "c798fbc57fe0c4198d63a73732c2c0f9e4b4816c",
+    "modelRepository": "deepghs/timms",
+    "modelCommit": "5f7defbb6aaa7a4e076c7a47f5bdd08b97cb03ce",
+    "sourceSha256": "4a37ec887bd283c75477ac927f28df8ba47d0e341ddfe7cb516bf509a6c8bf83",
+    "encoderSha256": "d5c33187c418a158aa5ee0a30b09f00f68300f0dff8968033d61838721d16b38"
+  },
+  "calibration": {
+    "status": "pending"
+  },
+  "limitations": [
+    "Os thresholds operacionais ainda não foram validados em um corpus separado.",
+    "Até a validação, o modelo calcula o sinal D3 real, mas retorna decisão incerta e não cria evidência de IA."
+  ],
+  "licenses": {
+    "d3Code": "MIT",
+    "timm": "Apache-2.0",
+    "imagenetWeights": "consulte o model card upstream"
+  }
+}

@@ -1,19 +1,33 @@
-// Contrato da Camada 2 (docs/detection-pipeline.md §7). Qualquer detector
-// visual real (ONNX, remoto, etc.) implementa esta interface; o pipeline
-// nunca depende de um detector concreto.
+import type { VisualDecision } from "@bp/shared";
+
+export interface LocalVisualResult {
+  detector: string;
+  detectorVersion: string;
+  modelSha256: string;
+  backend: "webgpu" | "wasm" | "mock" | "unavailable";
+  rawTemporalStd?: number;
+  /** Score calibrado, ou null enquanto os thresholds não passarem pelo portão de validação. */
+  syntheticScore: number | null;
+  decision: VisualDecision;
+  confidence: number;
+  sampledFrames: number;
+  usableFrames: number;
+  frameFingerprint?: string;
+  warnings: string[];
+}
+
 export interface VisualDetector {
   readonly name: string;
   readonly version: string;
   readonly isMock: boolean;
   initialize(): Promise<void>;
-  analyzeFrames(frames: ImageData[]): Promise<VisualDetectionResult>;
+  analyzeFrames(frames: string[], frameFingerprint?: string): Promise<LocalVisualResult>;
 }
 
-export interface VisualDetectionResult {
-  syntheticProbability: number; // 0..1
-  confidence: number; // 0..1
-  modelName: string;
-  modelVersion: string;
-  frameResults: Array<{ timestamp: number; syntheticProbability: number }>;
-  warnings: string[];
-}
+export type WorkerRequest =
+  | { id: number; kind: "initialize"; modelUrl: string }
+  | { id: number; kind: "analyze"; frames: string[]; frameFingerprint?: string };
+
+export type WorkerResponse =
+  | { id: number; ok: true; result?: LocalVisualResult }
+  | { id: number; ok: false; error: string };

@@ -46,6 +46,17 @@ function hasIndependentOrigins(evidence: Evidence[]): boolean {
   return origins.size >= 2 && synthetic.some((item) => HIGH_TRUST_ORIGINS.has(item.origin));
 }
 
+function hasStrictStallSignal(evidence: Evidence[]): boolean {
+  return evidence.some(
+    (item) =>
+      item.domain === "synthetic_media" &&
+      item.origin === "technical_signal" &&
+      item.correlationGroup === "visual-model" &&
+      item.source === "stall-dinov3-vitl16" &&
+      item.weight * item.confidence >= 0.9,
+  );
+}
+
 /**
  * Classifica evidências em uma das categorias de `docs/detection-pipeline.md` §6.
  * `score` representa somente o domínio `synthetic_media`. Divulgação de
@@ -68,7 +79,7 @@ export function classify(evidence: Evidence[], executed: string[]): { classifica
     return { classification: "declared_ai", score };
   }
 
-  if (score >= LIKELY_AI_THRESHOLD && hasIndependentOrigins(evidence)) {
+  if (score >= LIKELY_AI_THRESHOLD && (hasIndependentOrigins(evidence) || hasStrictStallSignal(evidence))) {
     return { classification: "likely_ai", score };
   }
   if (score >= POSSIBLY_AI_THRESHOLD) return { classification: "possibly_ai", score };

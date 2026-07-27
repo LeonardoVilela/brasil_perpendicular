@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import base64
 from typing import Any
 
 from fastapi.testclient import TestClient
@@ -32,10 +33,28 @@ def valid_feedback() -> dict[str, Any]:
     }
 
 
+def fake_jpeg(width: int = 32, height: int = 32) -> str:
+    # Cabeçalho JPEG mínimo suficiente para a validação estrutural; o detector
+    # falso dos testes não decodifica pixels.
+    sof = bytes.fromhex("ffd8ffc0001108") + height.to_bytes(2, "big") + width.to_bytes(2, "big")
+    sof += bytes.fromhex("03011100021100031100ffd9")
+    return "data:image/jpeg;base64," + base64.b64encode(sof).decode()
+
+
+def valid_frames() -> dict[str, Any]:
+    return {
+        "frames": [fake_jpeg()] * 4,
+        "frame_fingerprint": "a" * 64,
+        "sample_rate_fps": 8,
+        "duration_seconds": 2,
+        "reason": "local_uncertain",
+    }
+
+
 def test_health() -> None:
     resp = client.get("/health")
     assert resp.status_code == 200
-    assert resp.json() == {"status": "ok", "version": "0.1.0"}
+    assert resp.json() == {"status": "ok", "version": "0.3.0"}
 
 
 def test_analyze_context_returns_unavailable() -> None:
@@ -45,11 +64,7 @@ def test_analyze_context_returns_unavailable() -> None:
 
 
 def test_analyze_frames_returns_unavailable() -> None:
-    payload = {
-        "context": valid_context(),
-        "frames": ["data:image/jpeg;base64," + "A" * 100],
-    }
-    resp = client.post("/api/v1/analyze/frames", json=payload)
+    resp = client.post("/api/v1/analyze/frames", json=valid_frames())
     assert resp.status_code == 200
     assert resp.json()["status"] == "unavailable"
 
@@ -88,18 +103,12 @@ def test_context_max_combined_text_accepted() -> None:
 
 
 def test_frames_over_limit_rejected() -> None:
-    payload = {
-        "frames": ["data:image/jpeg;base64," + "A" * 100] * 7,
-        "context": valid_context(),
-    }
+    payload = valid_frames() | {"frames": [fake_jpeg()] * 17}
     assert client.post("/api/v1/analyze/frames", json=payload).status_code == 422
 
 
 def test_frame_too_big_rejected() -> None:
-    payload = {
-        "context": valid_context(),
-        "frames": ["A" * 1_400_001],
-    }
+    payload = valid_frames() | {"frames": ["A" * 250_001] * 4}
     assert client.post("/api/v1/analyze/frames", json=payload).status_code == 422
 
 

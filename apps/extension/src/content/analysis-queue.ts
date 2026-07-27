@@ -5,6 +5,7 @@
 export class AnalysisQueue {
   private readonly maxConcurrent: number;
   private running = 0;
+  private readonly highPriorityQueue: Array<() => Promise<void>> = [];
   private readonly queue: Array<() => Promise<void>> = [];
 
   constructor(maxConcurrent: number) {
@@ -15,17 +16,17 @@ export class AnalysisQueue {
   }
 
   get pending(): number {
-    return this.queue.length;
+    return this.highPriorityQueue.length + this.queue.length;
   }
 
-  enqueue(job: () => Promise<void>): void {
-    this.queue.push(job);
+  enqueue(job: () => Promise<void>, priority: "high" | "normal" = "normal"): void {
+    (priority === "high" ? this.highPriorityQueue : this.queue).push(job);
     this.runNext();
   }
 
   private runNext(): void {
     if (this.running >= this.maxConcurrent) return;
-    const job = this.queue.shift();
+    const job = this.highPriorityQueue.shift() ?? this.queue.shift();
     if (!job) return;
 
     this.running++;

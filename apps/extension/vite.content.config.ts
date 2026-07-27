@@ -6,6 +6,7 @@ export default defineConfig({
   define: { "process.env.NODE_ENV": '"production"' },
   build: {
     outDir: "dist",
+    emptyOutDir: false,
     lib: {
       entry: fileURLToPath(new URL("./src/content/index.ts", import.meta.url)),
       name: "BrasilPerpendicularContent",

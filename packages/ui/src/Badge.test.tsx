@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Badge } from "./Badge";
-import { STATE_STRINGS } from "./strings";
+import { BADGE_STRINGS, STATE_STRINGS } from "./strings";
 import type { OverlayState } from "./overlay-state";
 
 const ALL_STATES = Object.keys(STATE_STRINGS) as OverlayState[];
@@ -55,7 +55,7 @@ describe("Badge", () => {
     expect(onToggleExpand).toHaveBeenCalledTimes(1);
   });
 
-  it("mostra a marca visual somente quando há declaração confiável de IA", () => {
+  it("mostra a marca visual somente em declared_ai ou likely_ai", () => {
     const { rerender } = render(
       <Badge
         state="possibly_ai"
@@ -66,7 +66,7 @@ describe("Badge", () => {
         onClose={noop}
       />,
     );
-    expect(screen.queryByRole("img", { name: "Conteúdo declarado como gerado por IA" })).toBeNull();
+    expect(screen.queryByRole("img", { name: BADGE_STRINGS.certaintyImageAlt })).toBeNull();
 
     rerender(
       <Badge
@@ -78,6 +78,18 @@ describe("Badge", () => {
         onClose={noop}
       />,
     );
-    expect(screen.getByRole("img", { name: "Conteúdo declarado como gerado por IA" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: BADGE_STRINGS.certaintyImageAlt })).toBeTruthy();
+
+    rerender(
+      <Badge
+        state="likely_ai"
+        expanded={false}
+        certaintyImageSrc="data:image/webp;base64,teste"
+        onToggleExpand={noop}
+        onMinimize={noop}
+        onClose={noop}
+      />,
+    );
+    expect(screen.getByRole("img", { name: BADGE_STRINGS.certaintyImageAlt })).toBeTruthy();
   });
 });

@@ -4,17 +4,17 @@ Extensão brasileira que identifica e sinaliza possíveis vídeos gerados ou man
 
 ## O que é
 
-Extensão para navegadores Chromium (Manifest V3) que sobrepõe um selo explicativo a vídeos em páginas web, combinando divulgações da plataforma, contexto textual da página, regras locais e (nas próximas fases) análise visual e checagem externa. O resultado é comunicado como **evidência com incerteza explícita** — nunca como veredicto.
+Extensão para navegadores Chromium (Manifest V3) que sobrepõe um selo explicativo a vídeos em páginas web. A V3 combina divulgações da plataforma, contexto textual, análise visual local D3 e, quando autorizada, análise aprofundada STALL/DINOv3 no servidor. O resultado é comunicado como **evidência com incerteza explícita** — nunca como veredicto.
 
 ## Limitações desta versão
 
 - **Não é prova definitiva.** O produto nunca afirma que um vídeo é "100% real" ou "0% IA"; ausência de evidência não é evidência de autenticidade.
-- **Análise visual indisponível.** A interface `VisualDetector` existe, com um mock (apenas em modo desenvolvedor) e um stub ONNX, mas nenhum modelo real está integrado ao pipeline nesta entrega. Todo assessment marca `visual_model` em `unavailableAnalyses`.
-- **API sem análise real.** Os endpoints `/api/v1/analyze/*` existem, validam e limitam payloads, mas sempre respondem `{"status": "unavailable"}` — nunca um resultado fabricado.
+- **Nenhum detector é infalível.** Vídeos inéditos, compressão, recortes curtos e ataques adversariais podem gerar falsos positivos e falsos negativos.
+- **D3 local ainda não decide sozinho.** O modelo ONNX e a estatística temporal D3 são reais, mas os thresholds operacionais aguardam validação independente. Até lá, o resultado local é `uncertain` e serve para rotear a cascata sem fabricar evidência.
+- **STALL exige infraestrutura externa.** O detector aprofundado usa a implementação oficial STALL com DINOv3 ViT-L/16. Os pesos DINOv3 não são redistribuídos neste repositório e precisam ser obtidos do fornecedor. Sem os artefatos configurados, a API responde `unavailable`.
+- **Licença do STALL.** O código upstream é CC BY-NC; confirme que o uso é não comercial e compatível com seus termos antes de ativá-lo.
 - **Adaptadores são heurísticos e versionados.** YouTube, TikTok, Instagram e X/Twitter têm extração dedicada e fallback genérico, mas mudanças no DOM das plataformas podem reduzir a cobertura até os seletores serem atualizados.
-- **Sem áudio, temporal, C2PA, hash perceptual ou fact-check** — apenas interfaces declaradas (Fase 4).
-
-Veja [`docs/roadmap.md`](docs/roadmap.md) para o que cada fase adiciona e [`docs/product/mvp-scope.md`](docs/product/mvp-scope.md) para o escopo completo.
+- **Sem áudio, C2PA ou fact-check.** Contexto político apenas aumenta a prioridade e nunca é tratado como evidência de IA.
 
 ## Estrutura do monorepo
 
@@ -79,7 +79,11 @@ cd apps/api
 npm run build           # equivalente a: npm run build -w extension
 ```
 
-O build da extensão roda dois passes do Vite (content script em IIFE, depois service worker/popup/options como ESM) e gera `apps/extension/dist/`.
+O build da extensão roda três passes do Vite (worker ONNX, content script em IIFE e service worker/popup/options como ESM) e gera `apps/extension/dist/`.
+
+Para gerar o ZIP de produção com a API HTTPS correta, siga
+[`docs/chrome-web-store.md`](docs/chrome-web-store.md). O modelo ONNX leve e o
+runtime WASM vão dentro do pacote; o STALL/DINOv3 continua na API do projeto.
 
 ## Carregar a extensão no Chrome ou Brave
 
@@ -87,12 +91,12 @@ O build da extensão roda dois passes do Vite (content script em IIFE, depois se
 2. Abra `chrome://extensions` no Chrome ou `brave://extensions` no Brave.
 3. Ative o **Modo de desenvolvedor** (canto superior direito).
 4. Clique em **Carregar sem compactação** e selecione a pasta `apps/extension/dist`.
-5. Confirme que o card da extensão não mostra erros e permita o acesso **Em todos os sites** quando o navegador solicitar. Esse acesso é necessário para detectar vídeos automaticamente em páginas HTTP/HTTPS; a análise continua local e não envia conteúdo por conta própria.
+5. Confirme que o card da extensão não mostra erros. No Brave, abra **Detalhes → Acesso ao site** e selecione **Em todos os sites**. Sem isso, o navegador só executa a extensão depois de um clique no ícone.
 6. Após qualquer mudança de código: rode o build de novo e clique em recarregar (ícone circular) no card da extensão em `chrome://extensions`.
 
 ## Rodar a API (opcional)
 
-A API só é necessária para a "análise com mais profundidade" (que hoje responde honestamente `unavailable`) e para `/api/v1/feedback`.
+A API só é necessária para a análise STALL e para `/api/v1/feedback`. Sem os artefatos STALL/DINOv3, ela inicia normalmente e informa `unavailable`.
 
 ```bash
 cd apps/api
@@ -103,7 +107,12 @@ Verifique com `GET http://localhost:8000/health`.
 
 ## Configurar a URL da API
 
-Na tela de opções da extensão (ícone da extensão → **Configurações**, ou clique em "Configurações" no popup), há um campo **URL da API** (padrão `http://localhost:8000`). A "Análise profunda no servidor" fica **desligada por padrão** — é preciso ativá-la explicitamente nas opções antes de qualquer envio ao servidor, e o painel de detalhes pede consentimento antes de cada envio.
+Na tela de opções da extensão há um campo **URL da API** (padrão `http://localhost:8000`) e dois controles independentes:
+
+- **Análise automática local:** roda D3 no próprio navegador e fica ligada por padrão.
+- **Análise visual automática no servidor:** envia até 16 frames JPEG reduzidos por chamada e fica desligada por padrão. Contexto eleitoral pode usar uma segunda janela, totalizando no máximo 32 frames.
+
+O botão **Analisar com mais profundidade** continua disponível como ação manual e mostra exatamente o que será enviado. Frames, fingerprint e metadados técnicos são enviados; URL, legenda, termos políticos, autor e vídeo integral não são enviados.
 
 ## Demos locais
 
@@ -128,7 +137,7 @@ Veja o contrato completo em [`docs/detection-pipeline.md`](docs/detection-pipeli
 
 1. Implemente a interface `VisualDetector` (`apps/extension/src/detectors/types.ts`): `name`, `version`, `isMock`, `initialize()`, `analyzeFrames(frames)`.
 2. Nunca produza saída sem rótulo `isMock` correto; um detector mock só pode ser instanciado com `devMode = true` e deve prefixar avisos/labels com `[MOCK]`.
-3. Sem detector real disponível, o pipeline registra `visual_model` em `unavailableAnalyses` — o score de `synthetic_media` **não** é penalizado por indisponibilidade.
+3. Sem detector real disponível, o pipeline registra a análise em `unavailableAnalyses` — o score de `synthetic_media` **não** é penalizado por indisponibilidade.
 
 ## Passos manuais ainda pendentes (não automatizáveis neste ambiente)
 

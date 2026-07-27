@@ -1,4 +1,4 @@
-import type { VisualDetectionResult, VisualDetector } from "./types";
+import type { LocalVisualResult, VisualDetector } from "./types";
 
 const MOCK_PROBABILITY = 0.5;
 const MOCK_CONFIDENCE = 0.5;
@@ -25,16 +25,18 @@ export class MockVisualDetector implements VisualDetector {
     // Nada para carregar — não há modelo real.
   }
 
-  async analyzeFrames(frames: ImageData[]): Promise<VisualDetectionResult> {
+  async analyzeFrames(frames: string[], frameFingerprint?: string): Promise<LocalVisualResult> {
     return {
-      syntheticProbability: MOCK_PROBABILITY,
+      syntheticScore: MOCK_PROBABILITY,
       confidence: MOCK_CONFIDENCE,
-      modelName: "mock-fixed",
-      modelVersion: this.version,
-      frameResults: frames.map((_, index) => ({
-        timestamp: index,
-        syntheticProbability: MOCK_PROBABILITY,
-      })),
+      detector: "mock-fixed",
+      detectorVersion: this.version,
+      modelSha256: "mock",
+      backend: "mock",
+      decision: "uncertain",
+      sampledFrames: frames.length,
+      usableFrames: frames.length,
+      frameFingerprint,
       warnings: [MOCK_WARNING],
     };
   }

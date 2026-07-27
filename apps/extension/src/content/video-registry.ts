@@ -7,6 +7,8 @@ export interface TrackedVideo {
   cacheKey: string; // "plataforma|urlNormalizada|contextHash" — nunca blob:
   overlayHost?: HTMLElement;
   state: OverlayState;
+  visualAnalysisController?: AbortController;
+  requestDeepVisualAnalysis?: () => void;
 }
 
 function computeCacheKey(video: HTMLVideoElement, platform: string, context?: VideoContext): string {
@@ -55,7 +57,15 @@ export class VideoRegistry {
     return tracked;
   }
 
+  beginVisualAnalysis(video: HTMLVideoElement, platform: string): AbortSignal {
+    const tracked = this.track(video, platform);
+    tracked.visualAnalysisController?.abort();
+    tracked.visualAnalysisController = new AbortController();
+    return tracked.visualAnalysisController.signal;
+  }
+
   invalidate(video: HTMLVideoElement): void {
+    this.entries.get(video)?.visualAnalysisController?.abort();
     this.entries.delete(video);
   }
 }

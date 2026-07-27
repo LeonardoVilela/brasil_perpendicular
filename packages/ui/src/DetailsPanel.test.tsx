@@ -37,6 +37,35 @@ function makeAssessment(overrides: Partial<DetectionAssessment> = {}): Detection
 
 function noop() {}
 
+describe("DetailsPanel technical details", () => {
+  it("mostra detector, backend, frames úteis e motivo da análise visual", () => {
+    render(
+      <DetailsPanel
+        assessment={makeAssessment({
+          analysisDetails: [
+            {
+              analysis: "stall_visual",
+              detector: "stall-dinov3-vitl16",
+              version: "stall-test",
+              backend: "remote",
+              sampledFrames: 32,
+              usableFrames: 32,
+              reason: "political_context",
+            },
+          ],
+        })}
+        deepAnalysisEnabled={true}
+        onDeepAnalyze={noop}
+        onFeedback={noop}
+      />,
+    );
+
+    expect(screen.getByText(PANEL_STRINGS.technicalDetailsSection)).toBeTruthy();
+    expect(screen.getByText(/stall-dinov3-vitl16/).textContent).toContain("32 frames");
+    expect(screen.getByText(/stall-dinov3-vitl16/).textContent).toContain("contexto eleitoral");
+  });
+});
+
 describe("DetailsPanel", () => {
   it("mostra classificação, confiança e limitações do assessment", () => {
     render(
