@@ -12,6 +12,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit -p packages/shared && tsc --noEmit -p packages/detection-core && tsc --noEmit -p packages/ui && tsc --noEmit -p apps/extension",
     "build": "npm run build -w extension",
+    "verify": "npm test && npm run lint && npm run typecheck && npm run build",
+    "setup:hooks": "git config core.hooksPath .githooks",
     "package:extension": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/package-extension.ps1",
     "demo": "http-server scripts/demo -p 8080 -c-1"
   },

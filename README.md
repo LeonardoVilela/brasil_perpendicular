@@ -70,6 +70,21 @@ cd apps/api
 .venv/Scripts/python.exe -m mypy app
 ```
 
+## Verificação antes do push
+
+Ative o hook local uma vez:
+
+```bash
+npm run setup:hooks
+```
+
+Cada `git push` executará testes, lint, typecheck e build do Node, além de
+pytest, Ruff e mypy da API. O GitHub Actions repete os mesmos checks.
+
+Branches `feature/**` aprovadas são mescladas automaticamente em `develop`
+com merge commit. Quando `develop` estiver à frente de `main`, a automação
+abre ou atualiza um pull request para `main`.
+
 ## Build
 
 ```bash
