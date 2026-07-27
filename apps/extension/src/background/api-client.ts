@@ -1,6 +1,9 @@
 import {
+  deepVisualResultSchema,
   normalizeUrl,
   type DeepAnalysisReply,
+  type DeepVisualRequest,
+  type DeepVisualResult,
   type FeedbackPayload,
   type MessageResponse,
   type VideoContext,
@@ -8,9 +11,9 @@ import {
 
 const TIMEOUT_MS = 10_000;
 
-async function postJson(url: string, body: unknown): Promise<Response> {
+async function postJson(url: string, body: unknown, timeoutMs = TIMEOUT_MS): Promise<Response> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(url, {
       method: "POST",
@@ -20,6 +23,52 @@ async function postJson(url: string, body: unknown): Promise<Response> {
     });
   } finally {
     clearTimeout(timeout);
+  }
+}
+
+export async function requestDeepVisualAnalysis(
+  request: DeepVisualRequest,
+  apiUrl: string,
+): Promise<MessageResponse<DeepVisualResult>> {
+  const payload = {
+    frames: request.frames,
+    frame_fingerprint: request.frameFingerprint,
+    sample_rate_fps: request.sampleRateFps,
+    duration_seconds: request.durationSeconds,
+    reason: request.reason,
+    local_detector: request.localDetector
+      ? {
+          name: request.localDetector.name.slice(0, 100),
+          version: request.localDetector.version.slice(0, 100),
+          decision: request.localDetector.decision,
+          score: request.localDetector.score,
+        }
+      : undefined,
+  };
+  try {
+    const response = await postJson(`${apiUrl}/api/v1/analyze/frames`, payload, 20_000);
+    if (!response.ok) return { ok: false, error: `falha na API (status ${response.status})` };
+    const raw = (await response.json()) as Record<string, unknown>;
+    const parsed = deepVisualResultSchema.safeParse({
+      status: raw.status,
+      detector: raw.detector,
+      detectorVersion: raw.detector_version,
+      calibrationVersion: raw.calibration_version,
+      spatialScore: raw.spatial_score,
+      temporalScore: raw.temporal_score,
+      syntheticScore: raw.synthetic_score,
+      decision: raw.decision,
+      confidence: raw.confidence,
+      sampledFrames: raw.sampled_frames,
+      warnings: raw.warnings,
+    });
+    if (!parsed.success) return { ok: false, error: "resposta inválida da API" };
+    return {
+      ok: true,
+      data: parsed.data,
+    };
+  } catch {
+    return { ok: false, error: "falha ao conectar com a API" };
   }
 }
 

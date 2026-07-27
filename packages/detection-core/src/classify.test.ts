@@ -82,6 +82,34 @@ describe("classify", () => {
     expect(classify(evidence, ["context_rules"]).classification).toBe("possibly_ai");
   });
 
+  it("STALL estrito pode produzir likely_ai sozinho", () => {
+    const evidence = [
+      makeEvidence({
+        type: "visual_model",
+        correlationGroup: "visual-model",
+        origin: "technical_signal",
+        source: "stall-dinov3-vitl16",
+        weight: 0.96,
+        confidence: 0.96,
+      }),
+    ];
+    expect(classify(evidence, ["stall_visual"]).classification).toBe("likely_ai");
+  });
+
+  it("D3 sozinho produz no máximo possibly_ai", () => {
+    const evidence = [
+      makeEvidence({
+        type: "visual_model",
+        correlationGroup: "visual-model",
+        origin: "technical_signal",
+        source: "d3-mobilenetv3",
+        weight: 0.96,
+        confidence: 0.96,
+      }),
+    ];
+    expect(classify(evidence, ["d3_visual"]).classification).toBe("possibly_ai");
+  });
+
   it("possibly_ai quando 0.45 <= S < 0.75 (ferramenta + hashtag)", () => {
     const evidence = [
       makeEvidence({ correlationGroup: "ai-tool-mention", weight: 0.6, confidence: 0.9 }), // 0.54

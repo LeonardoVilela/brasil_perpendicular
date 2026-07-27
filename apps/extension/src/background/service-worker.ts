@@ -1,6 +1,6 @@
 import { requestMessageSchema, type MessageResponse, type RequestMessage } from "@bp/shared";
 import { cacheClear, cacheGet, cachePut } from "./assessment-cache";
-import { requestDeepAnalysis, submitFeedback } from "./api-client";
+import { requestDeepAnalysis, requestDeepVisualAnalysis, submitFeedback } from "./api-client";
 import { getSettings, setSettings } from "./settings-store";
 
 async function handleMessage(message: RequestMessage): Promise<MessageResponse<unknown>> {
@@ -30,6 +30,15 @@ async function handleMessage(message: RequestMessage): Promise<MessageResponse<u
         return { ok: false, error: "deep_analysis_disabled" };
       }
       return requestDeepAnalysis(message.context, settings.apiUrl);
+    }
+
+    case "DEEP_VISUAL_ANALYZE_REQUEST": {
+      const settings = await getSettings();
+      const explicitlyRequested = message.payload.reason === "manual_request";
+      if (!settings.automaticDeepVisualAnalysisEnabled && !explicitlyRequested) {
+        return { ok: false, error: "deep_visual_analysis_disabled" };
+      }
+      return requestDeepVisualAnalysis(message.payload, settings.apiUrl);
     }
 
     case "FEEDBACK_SUBMIT": {

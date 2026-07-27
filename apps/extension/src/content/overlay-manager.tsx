@@ -38,7 +38,7 @@ interface OverlayInstance {
 }
 
 interface OverlayRootProps {
-  video: HTMLVideoElement;
+  tracked: TrackedVideo;
   initialState: OverlayState;
   deps: OverlayManagerDeps;
   instance: OverlayInstance;
@@ -48,7 +48,8 @@ interface OverlayRootProps {
 // Wrapper local: estado de UI (expandido/minimizado) e o estado de análise
 // (waiting/analyzing/classificação) vivem aqui. O OverlayManager só expõe
 // show/setState/remove — o resto é detalhe de renderização.
-function OverlayRoot({ video, initialState, deps, instance, onClose }: OverlayRootProps) {
+function OverlayRoot({ tracked, initialState, deps, instance, onClose }: OverlayRootProps) {
+  const video = tracked.video;
   const [state, setState] = useState<OverlayState>(initialState);
   const [assessment, setAssessment] = useState<DetectionAssessment | undefined>(instance.assessment);
   const [expanded, setExpanded] = useState(false);
@@ -64,6 +65,10 @@ function OverlayRoot({ video, initialState, deps, instance, onClose }: OverlayRo
   if (minimized) return null;
 
   function handleDeepAnalyze(): void {
+    if (tracked.requestDeepVisualAnalysis) {
+      tracked.requestDeepVisualAnalysis();
+      return;
+    }
     void deps.sendMessage({ kind: "DEEP_ANALYZE_REQUEST", context: deps.getContext(video) });
   }
 
@@ -94,7 +99,7 @@ function OverlayRoot({ video, initialState, deps, instance, onClose }: OverlayRo
       {expanded && assessment ? (
         <DetailsPanel
           assessment={assessment}
-          deepAnalysisEnabled={deps.deepAnalysisEnabled}
+          deepAnalysisEnabled={Boolean(tracked.requestDeepVisualAnalysis) || deps.deepAnalysisEnabled}
           onDeepAnalyze={handleDeepAnalyze}
           onFeedback={handleFeedback}
         />
@@ -147,7 +152,7 @@ export class OverlayManager implements OverlayLike {
     flushSync(() => {
       root.render(
         <OverlayRoot
-          video={tracked.video}
+          tracked={tracked}
           initialState={tracked.state}
           deps={this.deps}
           instance={instance}

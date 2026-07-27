@@ -1,6 +1,7 @@
 export interface Settings {
   autoAnalyzeEnabled: boolean;
   deepAnalysisEnabled: boolean; // padrão false — privacidade
+  automaticDeepVisualAnalysisEnabled: boolean; // consentimento separado para envio de frames
   minVisibleMs: number; // padrão 2000
   maxConcurrentAnalyses: number; // padrão 2
   enabledPlatforms: {
@@ -18,6 +19,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   autoAnalyzeEnabled: true,
   deepAnalysisEnabled: false,
+  automaticDeepVisualAnalysisEnabled: false,
   minVisibleMs: 2000,
   maxConcurrentAnalyses: 2,
   enabledPlatforms: {

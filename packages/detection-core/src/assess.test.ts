@@ -159,4 +159,30 @@ describe("assess", () => {
     });
     expect(result.evidence.some((e) => e.id === "custom")).toBe(true);
   });
+
+  it("aceita evidência visual sem manter visual_model como indisponível", () => {
+    const result = assess(makeContext({ title: "Vídeo" }), {
+      visualAnalysisAvailable: true,
+      executedAnalyses: ["stall_visual"],
+      additionalEvidence: [
+        {
+          id: "stall-visual",
+          domain: "synthetic_media",
+          type: "visual_model",
+          label: "Sinal visual aprofundado",
+          description: "O detector visual encontrou um sinal forte de geração sintética.",
+          weight: 0.96,
+          confidence: 0.96,
+          correlationGroup: "visual-model",
+          origin: "technical_signal",
+          source: "stall-dinov3-vitl16",
+        },
+      ],
+      detectorVersions: { "stall-dinov3-vitl16": "test" },
+    });
+
+    expect(result.classification).toBe("likely_ai");
+    expect(result.unavailableAnalyses).not.toContain("visual_model");
+    expect(result.executedAnalyses).toContain("stall_visual");
+  });
 });

@@ -1,9 +1,19 @@
 {
   "manifest_version": 3,
   "name": "Brasil Perpendicular",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Sinaliza evidências de que um vídeo pode ter sido gerado ou manipulado por IA.",
   "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["http://localhost:8000/*"],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
   "background": { "service_worker": "service-worker.js", "type": "module" },
   "content_scripts": [
     {
@@ -12,6 +22,24 @@
       "run_at": "document_idle"
     }
   ],
-  "action": { "default_popup": "popup.html", "default_title": "Brasil Perpendicular" },
-  "options_page": "options.html"
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Brasil Perpendicular",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    }
+  },
+  "options_page": "options.html",
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "inference-worker.js",
+        "ort-wasm-simd-threaded.jsep.wasm",
+        "models/d3-mobilenetv3/encoder.onnx"
+      ],
+      "matches": ["http://*/*", "https://*/*"]
+    }
+  ]
 }

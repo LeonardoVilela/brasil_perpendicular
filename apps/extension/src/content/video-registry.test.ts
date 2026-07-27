@@ -104,4 +104,24 @@ describe("VideoRegistry", () => {
     registry.invalidate(video);
     expect(registry.get(video)).toBeUndefined();
   });
+
+  it("invalidate cancela a análise visual em andamento", () => {
+    const registry = new VideoRegistry();
+    const video = makeVideo("https://cdn.example.com/a.mp4");
+    const signal = registry.beginVisualAnalysis(video, "generic");
+
+    registry.invalidate(video);
+
+    expect(signal.aborted).toBe(true);
+  });
+
+  it("uma nova análise cancela a anterior no mesmo elemento", () => {
+    const registry = new VideoRegistry();
+    const video = makeVideo("https://cdn.example.com/a.mp4");
+    const first = registry.beginVisualAnalysis(video, "generic");
+    const second = registry.beginVisualAnalysis(video, "generic");
+
+    expect(first.aborted).toBe(true);
+    expect(second.aborted).toBe(false);
+  });
 });

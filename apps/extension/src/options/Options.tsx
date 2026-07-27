@@ -64,6 +64,26 @@ export function Options() {
         <p>Envia o contexto do vídeo (não o vídeo em si) para o servidor apenas quando ativado.</p>
       </div>
 
+      <div>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.automaticDeepVisualAnalysisEnabled}
+            onChange={(e) =>
+              setSettings((prev) => ({
+                ...prev,
+                automaticDeepVisualAnalysisEnabled: e.target.checked,
+              }))
+            }
+          />
+          Análise visual automática no servidor
+        </label>
+        <p>
+          Envia até 16 frames reduzidos por chamada, nunca o vídeo integral. Em contexto eleitoral,
+          uma segunda janela pode ser analisada. Os frames não são armazenados.
+        </p>
+      </div>
+
       <label>
         Tempo mínimo de visibilidade (segundos)
         <input
@@ -118,14 +138,18 @@ export function Options() {
         Modo desenvolvedor
       </label>
 
-      <label>
-        URL da API
-        <input
-          type="url"
-          value={settings.apiUrl}
-          onChange={(e) => setSettings((prev) => ({ ...prev, apiUrl: e.target.value }))}
-        />
-      </label>
+      {settings.devMode ? (
+        <label>
+          URL da API
+          <input
+            type="url"
+            value={settings.apiUrl}
+            onChange={(e) => setSettings((prev) => ({ ...prev, apiUrl: e.target.value }))}
+          />
+        </label>
+      ) : (
+        <p>A API oficial é definida pelo pacote publicado.</p>
+      )}
 
       <div>
         <button type="button" onClick={() => void handleSave()}>

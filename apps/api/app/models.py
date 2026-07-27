@@ -16,7 +16,8 @@ Classification = Literal[
 Expected = Literal["false_positive", "false_negative"]
 
 _HashtagStr = Annotated[str, Field(max_length=100)]
-_FrameStr = Annotated[str, Field(max_length=1_400_000)]
+_LegacyFrameStr = Annotated[str, Field(max_length=1_400_000)]
+_VisualFrameStr = Annotated[str, Field(max_length=250_000)]
 
 MAX_TOTAL_TEXT_CHARS = 20_000
 
@@ -44,18 +45,58 @@ class ContextPayload(BaseModel):
         return self
 
 
+class LocalDetectorPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(max_length=100)
+    version: str = Field(max_length=100)
+    decision: Literal["ai_like", "real_like", "uncertain", "unavailable"]
+    score: float = Field(ge=0, le=1)
+
+
 class FramesPayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    context: ContextPayload
-    frames: Annotated[list[_FrameStr], Field(min_length=1, max_length=6)]
+    frames: Annotated[list[_VisualFrameStr], Field(min_length=4, max_length=16)]
+    frame_fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")
+    sample_rate_fps: Literal[8]
+    duration_seconds: Literal[2]
+    reason: Literal[
+        "political_context",
+        "local_positive",
+        "local_uncertain",
+        "local_unavailable",
+        "signal_conflict",
+        "manual_request",
+    ]
+    local_detector: LocalDetectorPayload | None = None
+
+    @model_validator(mode="after")
+    def check_total_frame_length(self) -> "FramesPayload":
+        if sum(len(frame) for frame in self.frames) > 4_000_000:
+            raise ValueError("frames excedem 4 milhões de caracteres")
+        return self
+
+
+class DeepVisualResult(BaseModel):
+    status: Literal["analyzed", "unavailable"]
+    detector: Literal["stall-dinov3-vitl16"] = "stall-dinov3-vitl16"
+    detector_version: str
+    calibration_version: str
+    spatial_score: float | None = Field(default=None, ge=0, le=1)
+    temporal_score: float | None = Field(default=None, ge=0, le=1)
+    synthetic_score: float | None = Field(default=None, ge=0, le=1)
+    decision: Literal["ai_like", "real_like", "uncertain"] | None = None
+    confidence: float | None = Field(default=None, ge=0, le=1)
+    sampled_frames: int = Field(ge=0, le=16)
+    warnings: list[str] = Field(default_factory=list)
 
 
 class DeepPayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     context: ContextPayload
-    frames: Annotated[list[_FrameStr], Field(min_length=1, max_length=6)] | None = None
+    frames: Annotated[list[_LegacyFrameStr], Field(min_length=1, max_length=6)] | None = None
 
 
 class FeedbackPayload(BaseModel):

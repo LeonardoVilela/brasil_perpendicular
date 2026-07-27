@@ -1,6 +1,7 @@
 import { DEFAULT_SETTINGS, type Settings } from "@bp/shared";
 import { sendMessage } from "../send-message";
 import { pickAdapter } from "../platforms/registry";
+import { OnnxVisualDetector } from "../detectors/onnx";
 import { AnalysisQueue } from "./analysis-queue";
 import { OverlayManager } from "./overlay-manager";
 import { startPipeline } from "./pipeline";
@@ -39,6 +40,7 @@ async function bootstrap(): Promise<void> {
     overlays,
     settings,
     sendMessage,
+    visualDetector: new OnnxVisualDetector(),
   });
 }
 
