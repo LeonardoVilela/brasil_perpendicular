@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brasil Perpendicular — Páginas de demonstração</title>
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+  <h1>Páginas de demonstração local</h1>
+  <p>
+    Cada página abaixo serve para testar manualmente um aspecto da extensão
+    Brasil Perpendicular. Carregue a extensão em modo desenvolvedor, abra
+    <code>chrome://extensions</code>, e navegue para
+    <code>http://localhost:8080/&lt;página&gt;</code> com ela ativa.
+  </p>
+
+  <ul class="page-list">
+    <li>
+      <a href="single-video.html">single-video.html</a>
+      <p>Um único vídeo com título e descrição neutros ao redor.</p>
+    </li>
+    <li>
+      <a href="multiple-videos.html">multiple-videos.html</a>
+      <p>Três vídeos na mesma página, cada um com um contexto textual diferente: neutro, hashtag de IA e frase de golpe (Pix).</p>
+    </li>
+    <li>
+      <a href="infinite-feed.html">infinite-feed.html</a>
+      <p>Feed que injeta um novo card com vídeo a cada rolagem próxima do fim, até 30 cards — testa MutationObserver, dwell e fila de análise.</p>
+    </li>
+    <li>
+      <a href="replaced-video.html">replaced-video.html</a>
+      <p>Botão que troca a fonte do mesmo vídeo (mp4 ↔ webm) — testa invalidação de identidade via evento <code>loadstart</code>.</p>
+    </li>
+    <li>
+      <a href="ai-label.html">ai-label.html</a>
+      <p>Texto e hashtags declaram uso de IA ("gerado por IA usando Sora", #ai #sora) — deve produzir "Declarado como IA".</p>
+    </li>
+    <li>
+      <a href="political-video.html">political-video.html</a>
+      <p>Contexto eleitoral de 2026 sem declaração de IA — testa prioridade, STALL e a segunda janela quando o primeiro resultado é incerto.</p>
+    </li>
+    <li>
+      <a href="no-evidence.html">no-evidence.html</a>
+      <p>Vídeo com texto neutro de vlog de viagem — deve produzir "Sem evidências suficientes".</p>
+    </li>
+    <li>
+      <a href="cors-video.html">cors-video.html</a>
+      <p>Vídeo de origem cruzada sem atributo <code>crossorigin</code> — testa a degradação graciosa da captura visual.</p>
+    </li>
+    <li>
+      <a href="custom-player.html">custom-player.html</a>
+      <p>Vídeo dentro de um player customizado com controles próprios sobrepostos — verifica que o selo não bloqueia os controles da página.</p>
+    </li>
+  </ul>
+
+  <div class="note">
+    <strong>Sobre os vídeos usados nas demos:</strong> todas as páginas
+    referenciam os vídeos CC0 públicos do MDN,
+    <code>https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4</code>
+    e <code>flower.webm</code>. Isso exige rede. Para testar offline, baixe os
+    dois arquivos, coloque-os em <code>scripts/demo/media/flower.mp4</code> e
+    <code>scripts/demo/media/flower.webm</code>, e troque as URLs remotas por
+    <code>media/flower.mp4</code> / <code>media/flower.webm</code> nos
+    arquivos HTML desta pasta (busca e substituição simples — a URL é
+    idêntica em todas as páginas).
+  </div>
+</body>
+</html>

@@ -1,0 +1,42 @@
+[project]
+name = "bp-api"
+version = "0.1.0"
+description = "API honesta de analise profunda (opt-in) para a extensao Brasil Perpendicular"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic>=2",
+]
+
+[project.optional-dependencies]
+stall = [
+    "numpy",
+    "opencv-python-headless",
+    "Pillow",
+    "torch",
+    "torchvision",
+]
+dev = [
+    "pytest",
+    "httpx",
+    "ruff==0.15.22",
+    "mypy",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.mypy]
+strict = true
+
+[[tool.mypy.overrides]]
+module = "app.*"
+strict = true

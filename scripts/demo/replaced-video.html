@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Demonstração de troca de fonte de vídeo em tempo real, sem conteúdo de IA.">
+  <title>Vídeo com fonte trocada — demonstração</title>
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+  <nav class="back"><a href="index.html">← Voltar ao índice</a></nav>
+  <h1>Troca de fonte do mesmo vídeo</h1>
+  <p>
+    Clique no botão para trocar a fonte (<code>src</code>) do vídeo abaixo
+    entre os formatos mp4 e webm do mesmo clipe. A troca dispara o evento
+    <code>loadstart</code>, que a extensão usa para invalidar o cache e
+    reanalisar o vídeo como se fosse um vídeo novo.
+  </p>
+
+  <video id="demo-video" controls width="480" crossorigin="anonymous"
+    src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4">
+    Seu navegador não suporta reprodução de vídeo HTML5.
+  </video>
+
+  <button id="swap-btn" type="button">Trocar fonte (mp4 → webm)</button>
+
+  <script>
+    (function () {
+      const MP4 = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
+      const WEBM = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm";
+      const video = document.getElementById("demo-video");
+      const btn = document.getElementById("swap-btn");
+      let usingMp4 = true;
+
+      btn.addEventListener("click", () => {
+        usingMp4 = !usingMp4;
+        video.src = usingMp4 ? MP4 : WEBM;
+        video.load();
+        btn.textContent = usingMp4 ? "Trocar fonte (mp4 → webm)" : "Trocar fonte (webm → mp4)";
+      });
+    })();
+  </script>
+</body>
+</html>
