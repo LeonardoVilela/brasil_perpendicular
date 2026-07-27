@@ -6,6 +6,7 @@ import {
   DISCLAIMER,
   ORIGIN_STRINGS,
   PANEL_STRINGS,
+  REASON_STRINGS,
   STATE_STRINGS,
 } from "./strings";
 import styles from "./DetailsPanel.module.css";
@@ -78,6 +79,24 @@ export function DetailsPanel({ assessment, deepAnalysisEnabled, onDeepAnalyze, o
           <ul>
             {assessment.limitations.map((limitation) => (
               <li key={limitation}>{limitation}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {(assessment.analysisDetails?.length ?? 0) > 0 && (
+        <section>
+          <h3>{PANEL_STRINGS.technicalDetailsSection}</h3>
+          <ul>
+            {assessment.analysisDetails?.map((detail, index) => (
+              <li key={`${detail.analysis}-${index}`}>
+                {ANALYSIS_STRINGS[detail.analysis] ?? detail.analysis}
+                {detail.detector ? ` — ${detail.detector}` : ""}
+                {detail.version ? ` (${detail.version})` : ""}
+                {detail.backend ? `, backend ${detail.backend}` : ""}
+                {detail.usableFrames !== undefined ? `, ${detail.usableFrames} frames úteis` : ""}
+                {detail.reason ? `, motivo: ${REASON_STRINGS[detail.reason]}` : ""}
+              </li>
             ))}
           </ul>
         </section>

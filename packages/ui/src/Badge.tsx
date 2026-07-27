@@ -16,7 +16,7 @@ export function Badge({ state, expanded, certaintyImageSrc, onToggleExpand, onMi
 
   return (
     <div className={`${styles.badge} ${styles[tone]}`} role="status" tabIndex={0}>
-      {state === "declared_ai" && certaintyImageSrc ? (
+      {(state === "declared_ai" || state === "likely_ai") && certaintyImageSrc ? (
         <img
           className={styles.certaintyMark}
           src={certaintyImageSrc}

@@ -97,6 +97,56 @@ describe("requestMessageSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("aceita DEEP_VISUAL_ANALYZE_REQUEST dentro dos limites", () => {
+    const result = requestMessageSchema.safeParse({
+      kind: "DEEP_VISUAL_ANALYZE_REQUEST",
+      payload: {
+        frames: Array(4).fill("data:image/jpeg;base64,QQ=="),
+        frameFingerprint: "a".repeat(64),
+        sampleRateFps: 8,
+        durationSeconds: 2,
+        reason: "political_context",
+        localDetector: {
+          name: "d3-mobilenetv3",
+          version: "1.0.0",
+          decision: "uncertain",
+          score: 0.5,
+        },
+      },
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rejeita análise visual com frames demais, frame enorme ou fingerprint inválido", () => {
+    const payload = {
+      frames: Array(4).fill("data:image/jpeg;base64,QQ=="),
+      frameFingerprint: "a".repeat(64),
+      sampleRateFps: 8,
+      durationSeconds: 2,
+      reason: "local_uncertain",
+    };
+
+    expect(
+      requestMessageSchema.safeParse({
+        kind: "DEEP_VISUAL_ANALYZE_REQUEST",
+        payload: { ...payload, frames: Array(17).fill(payload.frames[0]) },
+      }).success,
+    ).toBe(false);
+    expect(
+      requestMessageSchema.safeParse({
+        kind: "DEEP_VISUAL_ANALYZE_REQUEST",
+        payload: { ...payload, frames: ["x".repeat(250_001)] },
+      }).success,
+    ).toBe(false);
+    expect(
+      requestMessageSchema.safeParse({
+        kind: "DEEP_VISUAL_ANALYZE_REQUEST",
+        payload: { ...payload, frameFingerprint: "não-é-sha256" },
+      }).success,
+    ).toBe(false);
+  });
+
   it("aceita FEEDBACK_SUBMIT com payload válido", () => {
     const result = requestMessageSchema.safeParse({
       kind: "FEEDBACK_SUBMIT",

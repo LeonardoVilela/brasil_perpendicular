@@ -1,6 +1,6 @@
 # Modelo de ameaças — Brasil Perpendicular
 
-Data: 2026-07-15
+Data: 2026-07-25
 Documentos relacionados: [privacy.md](privacy.md), [architecture.md](architecture.md)
 
 ## 1. Ativos a proteger
@@ -55,7 +55,7 @@ Cache e mensagens carregam URLs e contexto.
 
 **Mitigações**
 - URLs normalizadas (tracking removido) antes de armazenar/transmitir; cache com TTL e teto; sem sync em nuvem.
-- Nenhuma requisição sem ação explícita ([privacy.md](privacy.md)); API configurável apenas pelo usuário nas opções.
+- Nenhuma requisição visual sem confirmação manual ou opt-in automático separado ([privacy.md](privacy.md)); API configurável apenas pelo usuário.
 - Content script não expõe funções no `window` da página; mensageria só via `chrome.runtime` com validação de origem (`sender.id`).
 - Logs sem payload sensível mesmo em dev mode.
 
@@ -67,7 +67,8 @@ Cache e mensagens carregam URLs e contexto.
 
 ### T6 — Cadeia de suprimentos (ADV-5)
 **Mitigações**
-- Poucas dependências, todas convencionais (React, Vite, zod, Vitest; FastAPI, Pydantic); lockfiles commitados.
+- Dependências com lockfile; modelo ONNX com SHA-256; commits e hashes dos artefatos D3/STALL registrados.
+- STALL e DINOv3 ficam fora do repositório e não são baixados durante a inferência.
 - Sem scripts de pós-instalação customizados; builds determinísticos; revisão de novas dependências no code review.
 
 ### T7 — Degradação por plataformas (não adversarial, mas sistêmico)
@@ -88,9 +89,19 @@ O content script é carregado automaticamente em sites HTTP/HTTPS para que os r�
 **Mitigações**
 - O script roda em mundo isolado, não lê cookies, tokens ou credenciais e não expõe funções no `window` da página.
 - A extração é limitada ao título, metadados e texto próximo ao elemento de vídeo; o contexto integral não é persistido.
-- Nenhum dado ou frame é enviado automaticamente. Cache guarda URL normalizada, hash de contexto e assessment com TTL e limite.
+- Nenhum frame é enviado automaticamente sem o opt-in visual separado. URL, texto, autor e termo político nunca entram no payload STALL.
 - O usuário pode desligar a análise automática nas opções ou restringir o acesso por site nas configurações do navegador.
 - O manifesto cobre apenas HTTP/HTTPS, não `<all_urls>`.
+
+### T10 — Evasão do detector visual e vídeo político adversarial (ADV-1)
+Um autor pode recomprimir, recortar, inserir ruído, misturar trechos reais e sintéticos ou escolher geradores fora da calibração.
+
+**Mitigações**
+- Cascata espacial-temporal, segunda janela em contexto eleitoral e thresholds STALL conservadores.
+- D3 e STALL compartilham um único grupo de evidência; discordância não é contada duas vezes.
+- Resultado incerto permanece incerto, nunca “real”.
+- Versões e detalhes técnicos ficam visíveis para auditoria.
+- Risco residual alto: validação adversarial e monitoramento de drift são obrigatórios antes do uso eleitoral público.
 
 ## 4. Fora de escopo do MVP (registrado)
 
@@ -101,4 +112,4 @@ O content script é carregado automaticamente em sites HTTP/HTTPS para que os r�
 
 ## 5. Gatilhos de revisão deste documento
 
-Revisar quando: nova permissão; novo endpoint ou campo de payload; content script em novas origens; telemetria; armazenamento novo; integração com modelo real (Fase 3); exposição pública da API; publicação na Chrome Web Store.
+Revisar quando: nova permissão; novo endpoint ou campo de payload; content script em novas origens; telemetria; armazenamento novo; novo modelo ou threshold; exposição pública da API; publicação na Chrome Web Store.

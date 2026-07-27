@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DetectionAssessment } from "@bp/shared";
 import { STATE_STRINGS } from "@bp/ui";
+import { BADGE_STRINGS } from "@bp/ui";
 import { OverlayManager } from "./overlay-manager";
 import type { TrackedVideo } from "./video-registry";
 
@@ -97,7 +98,7 @@ describe("OverlayManager", () => {
     const text = tracked.overlayHost?.shadowRoot?.textContent ?? "";
     expect(text).toContain(STATE_STRINGS.declared_ai.label);
     const image = tracked.overlayHost?.shadowRoot?.querySelector("img");
-    expect(image?.getAttribute("alt")).toBe("Conteúdo declarado como gerado por IA");
+    expect(image?.getAttribute("alt")).toBe(BADGE_STRINGS.certaintyImageAlt);
     expect(image?.getAttribute("src")).toMatch(/^data:image\/webp;base64,/);
   });
 

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { FeedbackPayload, VideoContext } from "@bp/shared";
-import { requestDeepAnalysis, submitFeedback } from "./api-client";
+import type { DeepVisualRequest, FeedbackPayload, VideoContext } from "@bp/shared";
+import { requestDeepAnalysis, requestDeepVisualAnalysis, submitFeedback } from "./api-client";
 
 const API_URL = "http://localhost:8000";
 
@@ -30,6 +30,20 @@ const feedbackWithoutComment: FeedbackPayload = {
   assessmentVersion: "1.0.0",
   rulesetVersion: "1.0.0",
   expected: "false_positive",
+};
+
+const visualRequest: DeepVisualRequest = {
+  frames: Array(4).fill("data:image/jpeg;base64,QQ=="),
+  frameFingerprint: "a".repeat(64),
+  sampleRateFps: 8,
+  durationSeconds: 2,
+  reason: "political_context",
+  localDetector: {
+    name: "d3-mobilenetv3",
+    version: "2026.07",
+    decision: "uncertain",
+    score: 0.5,
+  },
 };
 
 // Tipa o mock de fetch com a assinatura real, sem exigir nomear parâmetros
@@ -199,5 +213,80 @@ describe("submitFeedback", () => {
     const [, init] = fetchMock.mock.calls[0]!;
     const body = JSON.parse(init?.body as string);
     expect(body).not.toHaveProperty("comment");
+  });
+});
+
+describe("requestDeepVisualAnalysis", () => {
+  it("envia somente frames, fingerprint e metadados técnicos mínimos", async () => {
+    const fetchMock = mockFetch(
+      async () =>
+        new Response(
+          JSON.stringify({
+            status: "analyzed",
+            detector: "stall-dinov3-vitl16",
+            detector_version: "stall-test",
+            calibration_version: "vatex-test",
+            spatial_score: 0.9,
+            temporal_score: 0.8,
+            synthetic_score: 0.85,
+            decision: "uncertain",
+            confidence: 0.85,
+            sampled_frames: 4,
+            warnings: [],
+          }),
+          { status: 200 },
+        ),
+    );
+
+    const result = await requestDeepVisualAnalysis(visualRequest, API_URL);
+
+    expect(result).toMatchObject({
+      ok: true,
+      data: { detectorVersion: "stall-test", syntheticScore: 0.85, sampledFrames: 4 },
+    });
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe(`${API_URL}/api/v1/analyze/frames`);
+    const body = JSON.parse(init?.body as string);
+    expect(body).toEqual({
+      frames: visualRequest.frames,
+      frame_fingerprint: visualRequest.frameFingerprint,
+      sample_rate_fps: 8,
+      duration_seconds: 2,
+      reason: "political_context",
+      local_detector: {
+        name: "d3-mobilenetv3",
+        version: "2026.07",
+        decision: "uncertain",
+        score: 0.5,
+      },
+    });
+    expect(body).not.toHaveProperty("context");
+    expect(body).not.toHaveProperty("page_url");
+    expect(body).not.toHaveProperty("author_name");
+  });
+
+  it("rejeita score fora do contrato em vez de confiar na API configurável", async () => {
+    mockFetch(
+      async () =>
+        new Response(
+          JSON.stringify({
+            status: "analyzed",
+            detector: "stall-dinov3-vitl16",
+            detector_version: "stall-test",
+            calibration_version: "vatex-test",
+            synthetic_score: 7,
+            decision: "ai_like",
+            confidence: 1,
+            sampled_frames: 4,
+            warnings: [],
+          }),
+          { status: 200 },
+        ),
+    );
+
+    await expect(requestDeepVisualAnalysis(visualRequest, API_URL)).resolves.toEqual({
+      ok: false,
+      error: "resposta inválida da API",
+    });
   });
 });

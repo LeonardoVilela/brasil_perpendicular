@@ -1,10 +1,10 @@
-import type { DetectionAssessment, Evidence, VideoContext } from "@bp/shared";
+import type { AnalysisDetail, DetectionAssessment, Evidence, VideoContext } from "@bp/shared";
 import { classify, scamRiskFrom } from "./classify";
 import { runRules } from "./engine";
 import { defaultRules, RULESET_VERSION } from "./rules";
 import type { TextRule } from "./rules/types";
 
-export const ASSESSMENT_VERSION = "0.2.0";
+export const ASSESSMENT_VERSION = "0.3.0";
 
 const VISUAL_MODEL_LIMITATION = "Análise visual não disponível nesta versão.";
 const NO_TEXT_CONTEXT_LIMITATION = "Nenhum contexto textual encontrado na página.";
@@ -15,7 +15,13 @@ const CONFIDENCE_HIGH_MIN_EXECUTED = 2;
 
 export interface AssessOptions {
   rules?: TextRule[];
+  additionalEvidence?: Evidence[];
+  executedAnalyses?: string[];
   unavailableAnalyses?: string[];
+  limitations?: string[];
+  detectorVersions?: Record<string, string>;
+  visualAnalysisAvailable?: boolean;
+  analysisDetails?: AnalysisDetail[];
 }
 
 function hasTextContext(context: VideoContext): boolean {
@@ -77,14 +83,24 @@ export function assess(context: VideoContext, options: AssessOptions = {}): Dete
   const rules = options.rules ?? defaultRules;
   const executedAnalyses = hasTextContext(context) ? ["context_rules"] : [];
   if (context.platform !== "generic") executedAnalyses.push("platform_adapter");
-  const evidence = removeWeakerDuplicates(runRules(context, rules));
+  executedAnalyses.push(...(options.executedAnalyses ?? []));
+  const evidence = removeWeakerDuplicates([
+    ...runRules(context, rules),
+    ...(options.additionalEvidence ?? []),
+  ]);
 
   const { classification, score } = classify(evidence, executedAnalyses);
   const scamRisk = scamRiskFrom(evidence);
   const confidence = confidenceFor(evidence, classification, executedAnalyses, context);
 
-  const unavailableAnalyses = ["visual_model", ...(options.unavailableAnalyses ?? [])];
-  const limitations = [VISUAL_MODEL_LIMITATION];
+  const unavailableAnalyses = [
+    ...(options.visualAnalysisAvailable ? [] : ["visual_model"]),
+    ...(options.unavailableAnalyses ?? []),
+  ];
+  const limitations = [
+    ...(options.visualAnalysisAvailable ? [] : [VISUAL_MODEL_LIMITATION]),
+    ...(options.limitations ?? []),
+  ];
   if (executedAnalyses.length === 0) limitations.push(NO_TEXT_CONTEXT_LIMITATION);
 
   return {
@@ -93,12 +109,13 @@ export function assess(context: VideoContext, options: AssessOptions = {}): Dete
     confidence,
     scamRisk,
     evidence,
-    executedAnalyses,
-    unavailableAnalyses,
-    limitations,
+    executedAnalyses: [...new Set(executedAnalyses)],
+    unavailableAnalyses: [...new Set(unavailableAnalyses)],
+    limitations: [...new Set(limitations)],
     analyzedAt: new Date().toISOString(),
     assessmentVersion: ASSESSMENT_VERSION,
     rulesetVersion: RULESET_VERSION,
-    detectorVersions: { context_rules: RULESET_VERSION },
+    detectorVersions: { context_rules: RULESET_VERSION, ...options.detectorVersions },
+    analysisDetails: options.analysisDetails,
   };
 }

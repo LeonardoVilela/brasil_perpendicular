@@ -132,6 +132,85 @@ describe("service-worker: DEEP_ANALYZE_REQUEST", () => {
   });
 });
 
+describe("service-worker: DEEP_VISUAL_ANALYZE_REQUEST", () => {
+  const payload = {
+    frames: Array(4).fill("data:image/jpeg;base64,QQ=="),
+    frameFingerprint: "a".repeat(64),
+    sampleRateFps: 8 as const,
+    durationSeconds: 2 as const,
+    reason: "political_context" as const,
+  };
+
+  it("não chama fetch sem o novo opt-in específico", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = (await chromeMock.dispatchMessage({
+      kind: "DEEP_VISUAL_ANALYZE_REQUEST",
+      payload,
+    })) as MessageResponse<unknown>;
+
+    expect(response).toEqual({ ok: false, error: "deep_visual_analysis_disabled" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("chama a API automaticamente depois do opt-in", async () => {
+    await chromeMock.dispatchMessage({
+      kind: "SETTINGS_SET",
+      settings: { ...DEFAULT_SETTINGS, automaticDeepVisualAnalysisEnabled: true },
+    });
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            status: "unavailable",
+            detector: "stall-dinov3-vitl16",
+            detector_version: "stall-test",
+            calibration_version: "vatex-test",
+            sampled_frames: 4,
+            warnings: ["stall_not_configured"],
+          }),
+          { status: 200 },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = (await chromeMock.dispatchMessage({
+      kind: "DEEP_VISUAL_ANALYZE_REQUEST",
+      payload,
+    })) as MessageResponse<unknown>;
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(response).toMatchObject({ ok: true, data: { status: "unavailable" } });
+  });
+
+  it("permite envio por clique explícito mesmo sem opt-in automático", async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            status: "unavailable",
+            detector: "stall-dinov3-vitl16",
+            detector_version: "stall-test",
+            calibration_version: "vatex-test",
+            sampled_frames: 4,
+            warnings: ["stall_not_configured"],
+          }),
+          { status: 200 },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = (await chromeMock.dispatchMessage({
+      kind: "DEEP_VISUAL_ANALYZE_REQUEST",
+      payload: { ...payload, reason: "manual_request" },
+    })) as MessageResponse<unknown>;
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(response).toMatchObject({ ok: true, data: { status: "unavailable" } });
+  });
+});
+
 describe("service-worker: FEEDBACK_SUBMIT", () => {
   it("envia feedback mesmo com deepAnalysisEnabled desligado (ação explícita do usuário)", async () => {
     const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));

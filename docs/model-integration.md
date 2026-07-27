@@ -1,71 +1,54 @@
-# Integração de modelo visual — Brasil Perpendicular
+# Integração de modelos visuais
 
-Data: 2026-07-20
-Documentos relacionados: [detection-pipeline.md](detection-pipeline.md), [architecture.md](architecture.md), [privacy.md](privacy.md), [threat-model.md](threat-model.md)
+Data: 2026-07-25
 
-A primeira entrega não executa análise visual real. Ela mantém um contrato substituível, um mock restrito ao modo desenvolvedor e um stub ONNX que falha honestamente. Um modelo real entra somente na Fase 3 e não muda a regra central do produto: o resultado é evidência com incerteza, nunca prova definitiva.
+## D3 local
 
-## Contrato `VisualDetector`
+A extensão inclui um encoder MobileNetV3 em ONNX e executa inferência em worker com `onnxruntime-web`.
 
-Definido em `apps/extension/src/detectors/types.ts`:
+- entrada: frames RGB normalizados em `224 × 224`;
+- saída: embeddings de 1.280 dimensões;
+- sinal: desvio-padrão das diferenças temporais de segunda ordem, seguindo a formulação D3;
+- backend: WebGPU, com fallback WASM;
+- modelo e hashes: `apps/extension/public/models/d3-mobilenetv3/model-card.json`.
 
-```ts
-export interface VisualDetector {
-  readonly name: string;
-  readonly version: string;
-  readonly isMock: boolean;
-  initialize(): Promise<void>;
-  analyzeFrames(frames: ImageData[]): Promise<VisualDetectionResult>;
-}
-```
+O arquivo `encoder.onnx` tem SHA-256 `d5c33187c418a158aa5ee0a30b09f00f68300f0dff8968033d61838721d16b38`.
 
-`VisualDetectionResult` informa probabilidade sintética, confiança, nome e versão do modelo, resultados por frame e avisos. Probabilidade e confiança ficam entre 0 e 1. Na integração futura, o pipeline transformará a saída válida em evidência do domínio `synthetic_media`; o detector não classificará o vídeo nem alterará thresholds.
+Os thresholds D3 ainda não passaram por validação separada. O runtime calcula e registra o sinal, mas retorna `uncertain` e `syntheticScore: null`. Isso evita transformar uma estatística real, porém não calibrada, em rótulo enganoso.
 
-Uma implementação real deve:
+## STALL remoto
 
-- carregar seus recursos em `initialize()` e rejeitar com erro explícito quando eles não estiverem disponíveis;
-- produzir saída determinística para a mesma entrada e versão do modelo;
-- validar limites e valores da saída antes de entregá-la ao pipeline;
-- identificar a versão exata do modelo no assessment e invalidar cache incompatível;
-- tratar falhas de frame, CORS, canvas contaminado e DRM como análise indisponível, sem fabricar um score;
-- não persistir frames nem enviá-los pela rede.
+STALL é um detector training-free que usa DINOv3 ViT-L/16 e calibração VATEX. O wrapper local:
 
-Sem detector real disponível, o assessment adiciona `visual_model` a `unavailableAnalyses` e registra a limitação. A indisponibilidade não reduz os scores obtidos por outros domínios de evidência.
+- importa a implementação oficial a partir de um diretório externo;
+- fixa o commit `bfcc603ae83b4e609681277b9b5e80e7a9497e15`;
+- verifica o SHA-256 dos parâmetros VATEX;
+- converte a direção do score de “mais real” para “mais sintético”;
+- não baixa código ou pesos durante a requisição;
+- degrada para `unavailable` se qualquer artefato faltar.
 
-## Plano ONNX para a Fase 3
+Os pesos DINOv3 são grandes e não pertencem ao bundle da extensão. Eles rodam no servidor central; os computadores dos usuários continuam responsáveis apenas pelo detector local leve e pela captura reduzida.
 
-`apps/extension/src/detectors/onnx.ts` é apenas o ponto de substituição atual. A integração planejada usa ONNX Runtime Web com esta ordem:
+Consulte [apps/api/README.md](../apps/api/README.md) para a configuração.
 
-1. incluir um modelo quantizado e seus metadados nos assets versionados da extensão;
-2. inicializar pelo backend WebGPU quando disponível e usar WASM como fallback;
-3. extrair de 3 a 6 frames redimensionados, com limites de memória e tempo;
-4. aplicar exatamente o pré-processamento declarado pelo modelo;
-5. agregar os resultados por frame no pipeline, preservando avisos e versão;
-6. medir tamanho do bundle, latência e uso de memória em hardware sem GPU antes de habilitar por padrão.
+## Licenças e proveniência
 
-A escolha do modelo, licença, conjunto de avaliação, calibração e thresholds precisa ser registrada antes da implementação. Quantização só é aceita após comparar a qualidade com a versão de referência; redução de tamanho não pode ser tratada como equivalência presumida.
+- código D3: MIT;
+- runtime ONNX: licença declarada pelo pacote upstream;
+- STALL: CC BY-NC, sem redistribuição neste repositório;
+- DINOv3 e seus pesos: termos do fornecedor;
+- encoder ImageNet: fontes e commit registrados no model card.
 
-Não adicione `onnxruntime-web` enquanto o modelo e o plano de avaliação não estiverem aprovados. O stub atual mantém a entrega honesta sem aumentar o bundle.
+Ativar STALL exige `STALL_NONCOMMERCIAL_ACKNOWLEDGED=true`. Distribuição pública ou uso comercial exige revisão jurídica das licenças.
 
-## Regra anti-mock
+## Portões de qualidade
 
-`MockVisualDetector` existe somente para testes e modo desenvolvedor:
+Um detector só pode gerar evidência quando:
 
-- o construtor rejeita `devMode: false`;
-- `isMock` é sempre `true`;
-- nome, versão, avisos e evidências derivadas ficam marcados com `mock`/`[MOCK]`;
-- o resultado não pode ser persistido como assessment genuíno;
-- nenhuma tela de produção pode apresentar a saída como análise real.
+1. o arquivo e o pré-processamento correspondem ao model card;
+2. a saída é finita e respeita o contrato;
+3. thresholds foram validados em corpus separado;
+4. versão e calibração entram no assessment/cache;
+5. falsos positivos, falsos negativos e falhas são exibidos como limitações.
 
-Um mock nunca é fallback de produção. Se o modelo real falhar, o estado correto é análise visual indisponível.
-
-## Verificação mínima da integração futura
-
-Antes de habilitar um detector real:
-
-- testes unitários cobrem inicialização, pré-processamento, limites da saída, fallback WebGPU → WASM e falhas de frame;
-- fixtures conhecidas verificam estabilidade e calibração sem prometer detecção perfeita;
-- o build continua carregável em Manifest V3 e o modelo não depende de código remoto;
-- DevTools confirma ausência de upload automático e de requisições ocultas;
-- `docs/privacy.md` e `docs/threat-model.md` são revisados;
-- a UI continua exibindo evidências, limitações, versão do detector e o aviso de que o resultado não é prova definitiva.
+Mocks permanecem exclusivos dos testes. Falha do modelo real nunca usa mock como fallback.

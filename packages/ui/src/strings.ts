@@ -30,6 +30,9 @@ export const ANALYSIS_STRINGS: Record<string, string> = {
   context_rules: "Regras de contexto",
   platform_adapter: "Metadados do post na plataforma",
   visual_model: "Modelo visual",
+  d3_visual: "Detector visual local D3",
+  stall_visual: "Detector visual aprofundado STALL",
+  political_routing: "Priorização por contexto eleitoral",
   provenance: "Procedência",
 };
 
@@ -42,7 +45,7 @@ export const ORIGIN_STRINGS = {
 } as const;
 
 export const BADGE_STRINGS = {
-  certaintyImageAlt: "Conteúdo declarado como gerado por IA",
+  certaintyImageAlt: "Alerta de forte evidência de conteúdo gerado por IA",
   expandLabel: "Expandir detalhes",
   collapseLabel: "Recolher detalhes",
   minimizeLabel: "Minimizar",
@@ -63,6 +66,7 @@ export const PANEL_STRINGS = {
   executedSection: "Análises executadas",
   unavailableSection: "Análises indisponíveis",
   limitationsSection: "Limitações",
+  technicalDetailsSection: "Detalhes técnicos",
   riskSection: "Contexto de risco",
   riskExplanation:
     "Este contexto indica risco de golpe associado à publicação — não é prova de conteúdo gerado por IA.",
@@ -71,9 +75,18 @@ export const PANEL_STRINGS = {
   falsePositiveButton: "Informar falso positivo",
   falseNegativeButton: "Informar falso negativo",
   consentTitle: "O que será enviado para análise",
-  consentItemText: "Título, descrição e hashtags (truncados)",
-  consentItemUrl: "URL da página, sem parâmetros de rastreamento",
-  consentItemPlatform: "Plataforma",
+  consentItemText: "Até 16 frames JPEG reduzidos; nunca o vídeo integral",
+  consentItemUrl: "Nenhuma URL, legenda, termo político ou nome de autor",
+  consentItemPlatform: "Os frames são descartados após a análise",
   consentSendButton: "Enviar para análise",
   consentCancelButton: "Cancelar",
 };
+
+export const REASON_STRINGS = {
+  political_context: "contexto eleitoral",
+  local_positive: "sinal local positivo",
+  local_uncertain: "sinal local incerto",
+  local_unavailable: "detector local indisponível",
+  signal_conflict: "conflito entre sinais",
+  manual_request: "solicitação manual",
+} as const;

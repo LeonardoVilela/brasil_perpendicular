@@ -41,6 +41,7 @@ describe("Options", () => {
       ...DEFAULT_SETTINGS,
       autoAnalyzeEnabled: false,
       deepAnalysisEnabled: true,
+      automaticDeepVisualAnalysisEnabled: true,
       minVisibleMs: 3000,
       maxConcurrentAnalyses: 5,
       enabledPlatforms: {
@@ -62,6 +63,7 @@ describe("Options", () => {
 
     expect(isChecked("Análise automática local")).toBe(false);
     expect(isChecked("Análise profunda no servidor")).toBe(true);
+    expect(isChecked("Análise visual automática no servidor")).toBe(true);
     expect(inputValue("Tempo mínimo de visibilidade (segundos)")).toBe("3");
     expect(inputValue("Máximo de análises simultâneas")).toBe("5");
     expect(isChecked("YouTube")).toBe(false);
@@ -77,18 +79,22 @@ describe("Options", () => {
     mockSettingsGet();
     render(<Options />);
 
-    await waitFor(() => expect(inputValue("URL da API")).toBe(DEFAULT_SETTINGS.apiUrl));
+    await waitFor(() => expect(chromeMock.runtime.sendMessage).toHaveBeenCalledWith({ kind: "SETTINGS_GET" }));
     expect(screen.getByText(/envia o contexto do vídeo/i)).toBeTruthy();
+    expect(screen.getByText(/até 16 frames reduzidos/i)).toBeTruthy();
+    expect(screen.queryByLabelText("URL da API")).toBeNull();
+    expect(screen.getByText(/API oficial é definida pelo pacote/i)).toBeTruthy();
   });
 
   it("Salvar envia SETTINGS_SET com o objeto Settings atualizado", async () => {
     mockSettingsGet();
     render(<Options />);
 
-    await waitFor(() => expect(inputValue("URL da API")).toBe(DEFAULT_SETTINGS.apiUrl));
+    await waitFor(() => expect(chromeMock.runtime.sendMessage).toHaveBeenCalledWith({ kind: "SETTINGS_GET" }));
 
     const user = userEvent.setup();
     await user.click(screen.getByLabelText("Modo desenvolvedor"));
+    expect(inputValue("URL da API")).toBe(DEFAULT_SETTINGS.apiUrl);
     await user.click(screen.getByRole("button", { name: "Salvar" }));
 
     await waitFor(() =>
@@ -104,7 +110,7 @@ describe("Options", () => {
     mockSettingsGet();
     render(<Options />);
 
-    await waitFor(() => expect(inputValue("URL da API")).toBe(DEFAULT_SETTINGS.apiUrl));
+    await waitFor(() => expect(chromeMock.runtime.sendMessage).toHaveBeenCalledWith({ kind: "SETTINGS_GET" }));
 
     const user = userEvent.setup();
     const input = screen.getByLabelText("Tempo mínimo de visibilidade (segundos)");
@@ -124,7 +130,7 @@ describe("Options", () => {
     mockSettingsGet();
     render(<Options />);
 
-    await waitFor(() => expect(inputValue("URL da API")).toBe(DEFAULT_SETTINGS.apiUrl));
+    await waitFor(() => expect(chromeMock.runtime.sendMessage).toHaveBeenCalledWith({ kind: "SETTINGS_GET" }));
 
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Limpar cache" }));

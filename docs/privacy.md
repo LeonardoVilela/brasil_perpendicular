@@ -1,88 +1,81 @@
 # Privacidade — Brasil Perpendicular
 
-Data: 2026-07-15
-Documentos relacionados: [threat-model.md](threat-model.md), [mvp-scope.md](product/mvp-scope.md)
+Data: 2026-07-25
+Documento relacionado: [threat-model.md](threat-model.md)
 
-Privacidade é requisito de produto, não polimento opcional. Qualquer mudança que adicione permissão, chamada de rede, campo de armazenamento ou telemetria **deve** atualizar este documento antes do merge.
+## Princípios
 
-## 1. Princípios
+1. Análise local é o padrão.
+2. O envio visual automático é um opt-in separado e desligado por padrão.
+3. O clique manual mostra uma confirmação antes do envio.
+4. O vídeo integral nunca é enviado.
+5. Frames não são persistidos nem registrados em logs.
 
-1. Análise local é o padrão; o servidor só recebe dados após ação explícita do usuário ou opt-in claro nas configurações.
-2. Nenhuma mídia é enviada automaticamente. Upload de vídeo integral é proibido no MVP.
-3. O usuário é informado, antes do envio, exatamente sobre quais dados serão transmitidos.
-4. Coleta mínima: se um dado não é necessário para a funcionalidade, ele não é lido, armazenado nem transmitido.
-5. Nenhum comportamento de rede oculto: toda requisição parte de uma ação rastreável no código e é documentada aqui.
+## Dados tratados localmente
 
-## 2. O que a extensão NUNCA faz
+| Dado | Retenção |
+|---|---|
+| Preferências | `chrome.storage.local`, até limpar/desinstalar |
+| Contexto próximo ao vídeo | memória da aba durante a análise |
+| Até 16 frames e miniaturas 9×8 | memória, descartados após a passagem |
+| Assessment e identidade normalizada | cache local com TTL e limite |
+| Modelo ONNX | asset empacotado na extensão |
 
-- Não coleta cookies, tokens de sessão ou credenciais.
-- Não procura cookies, credenciais ou áreas de mensagens. Como o content script roda em páginas HTTP/HTTPS, texto próximo a um vídeo em uma página autenticada ou privada pode ser processado localmente; esse texto não é persistido nem enviado automaticamente.
-- Não persiste frames de vídeo por padrão.
-- Não registra URLs privadas por padrão.
-- Não envia dados a terceiros; a única origem remota possível é a API configurada pelo usuário.
-- Não contém analytics/telemetria (adicionar exigiria documentação, opt-in e aprovação explícita).
-- Não loga frames, texto integral de páginas nem payloads sensíveis, mesmo em modo desenvolvedor.
+A extensão não lê cookies, tokens ou credenciais. Contexto político é processado localmente e não entra no payload visual.
 
-## 3. Dados tratados
+## Dados enviados na análise visual
 
-### 3.1 Local (sempre)
+Somente depois do opt-in automático ou da confirmação manual:
 
-| Dado | Onde | Retenção | Controle do usuário |
-|---|---|---|---|
-| Preferências (settings) | `chrome.storage.local` | Até desinstalar/limpar | Tela de opções |
-| Contexto textual próximo a vídeos visíveis | Memória da aba, durante a análise local | Descartado após gerar o assessment; apenas um hash entra na identidade de cache | Desativar análise automática nas opções ou limitar o acesso a sites no navegador |
-| Cache de assessments (identidade do vídeo normalizada + resultado + versões) | `chrome.storage.local` | TTL 7 dias, máx. 500 entradas, LRU | Botão "limpar cache" nas opções |
-| Estado de overlay (fechado/minimizado) | Memória da aba | Sessão da aba | Fechar aba |
+- 4 a 16 frames JPEG reduzidos por chamada;
+- fingerprint SHA-256 derivado de dHashes;
+- taxa e duração fixas;
+- motivo técnico da escalada;
+- opcionalmente nome, versão, decisão e score do detector local.
 
-A identidade de vídeo no cache usa URL **normalizada** (sem parâmetros de tracking) e hash de contexto — nunca o texto integral da publicação.
+Não são enviados:
 
-### 3.2 Enviados à API (somente com ação explícita)
+- URL ou domínio da página;
+- título, descrição, legenda ou hashtag;
+- nome do autor ou plataforma;
+- termos políticos encontrados;
+- cookies, headers de sessão, histórico ou conteúdo de outras abas;
+- vídeo ou áudio integral.
 
-Ao clicar em "Analisar com mais profundidade", a extensão mostra um diálogo de consentimento listando o que será enviado:
+Em contexto eleitoral, um primeiro resultado incerto pode acionar uma segunda chamada de até 16 frames. O máximo dessa passagem é 32 frames.
 
-- contexto textual extraído (título, descrição, hashtags — truncados aos limites documentados);
-- URL da página normalizada (tracking removido);
-- plataforma;
-- futuramente (Fase 3, com novo consentimento): frames redimensionados.
+## Servidor e retenção
 
-O que **não** é enviado: cookies, headers de sessão, histórico, conteúdo de outras abas, vídeo integral.
+Os bytes JPEG existem somente durante validação e inferência. A API não grava payloads nem frames. O cache SQLite contém apenas:
 
-### 3.3 Feedback
+- fingerprint;
+- versão do detector;
+- versão da calibração;
+- resultado JSON.
 
-`POST /feedback` envia apenas: resumo do assessment (classificação, score, versões), avaliação do usuário (falso positivo/negativo) e comentário opcional. Sem frames e sem identificadores pessoais. Armazenado em JSONL local no servidor.
+Resultados indisponíveis não são armazenados. O feedback continua separado e não contém frames.
 
-## 4. Normalização de URLs
+## Controles
 
-Antes de armazenar ou transmitir qualquer URL, remover parâmetros de tracking — lista mantida em `packages/shared/src/url.ts` e coberta por testes:
+- **Análise automática local:** pode ser desligada nas opções.
+- **Análise visual automática no servidor:** desligada por padrão.
+- **Analisar com mais profundidade:** ação pontual com confirmação.
+- **Acesso ao site:** pode ser limitado no Chrome/Brave.
+- **Limpar cache:** remove assessments locais.
 
-`utm_*`, `fbclid`, `gclid`, `dclid`, `msclkid`, `igshid`, `igsh`, `si`, `feature`, `ref`, `ref_src`, `ref_url`, `mc_cid`, `mc_eid`, `yclid`, `twclid`, `ttclid`.
+No Brave, escolher acesso **Em todos os sites** é necessário para os rótulos automáticos. Isso autoriza a execução do content script, não autoriza sozinho o envio remoto.
 
-Fragmentos (`#...`) são descartados, exceto quando fazem parte de rota de SPA conhecida pelos adaptadores.
+## Permissões do Manifest V3
 
-## 5. Permissões do Manifest V3 e justificativas
+| Permissão | Uso |
+|---|---|
+| `storage` | configurações e cache |
+| `activeTab` | reinjeção manual solicitada pelo usuário |
+| `scripting` | executar a reinjeção na aba ativa |
+| HTTP/HTTPS em `content_scripts` | detectar vídeos automaticamente |
 
-| Permissão | Justificativa | Escopo |
-|---|---|---|
-| `storage` | Settings e cache local | Local à extensão |
-| `activeTab` | Reinjeção manual de fallback pelo popup | Aba ativa, uma vez |
-| `scripting` | Executar a reinjeção manual solicitada pelo usuário | Depende de `activeTab` |
-| `content_scripts.matches` | Detectar vídeos automaticamente, sem clique por página | `http://*/*` e `https://*/*`; não inclui `file://` nem outros protocolos |
+O worker, WASM e modelo ONNX são recursos locais da própria extensão. Não há código remoto.
 
-O navegador informa esse acesso durante a instalação/atualização. O usuário pode limitar o acesso por site nas configurações do navegador ou desligar a análise automática nas opções da extensão. O acesso amplo não autoriza tráfego de rede: a análise local continua sem upload, e análise profunda/feedback continuam dependendo de ação explícita.
+## Logs e LGPD
 
-Regra: adicionar qualquer permissão exige justificar necessidade, minimizar escopo, documentar retenção e controle aqui, e atualizar o [threat-model.md](threat-model.md).
-
-## 6. LGPD
-
-- **Base legal**: legítimo interesse do usuário que instala a ferramenta para sua própria proteção; dados tratados localmente por padrão.
-- **Minimização (art. 6º, III)**: apenas contexto textual necessário; sem identificadores pessoais coletados deliberadamente.
-- **Transparência (art. 9º)**: este documento + diálogo de consentimento pré-envio + README.
-- **Riscos documentados**: texto de publicações pode conter dados pessoais de terceiros; mitigação: truncamento, não persistência no servidor (análises não são armazenadas), logs sem payload.
-- **Direitos do titular**: dados locais são apagáveis pelo usuário (limpar cache/desinstalar); feedback não contém identificadores que permitam vínculo a pessoa natural.
-- Pendência registrada para fase de distribuição pública: política de privacidade própria e revisão jurídica antes de publicar na Chrome Web Store.
-
-## 7. Logs
-
-- Produção: sem logs de conteúdo. Erros logados com códigos e mensagens genéricas.
-- Modo desenvolvedor: logs estruturados (`logger` compartilhado) podem incluir metadados de pipeline (tempos, contagens, classificações), **nunca** frames, texto integral ou URLs com parâmetros de tracking.
-- API: logs de acesso sem corpo de requisição; erros de validação sem eco do payload.
+Logs não devem conter frames, texto integral ou URLs privadas. A coleta mínima, transparência e controles locais apoiam os princípios de necessidade e minimização da LGPD. Antes da Chrome Web Store ou de uma API pública, ainda são necessárias política de privacidade publicada, revisão jurídica, autenticação e política operacional de retenção.
