@@ -24,8 +24,8 @@ jobs:
     name: Node
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -36,8 +36,8 @@ jobs:
     name: Python
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
@@ -46,7 +46,7 @@ jobs:
         working-directory: apps/api
       - run: python -m pytest
         working-directory: apps/api
-      - run: python -m ruff check .
+      - run: python -m ruff check . --output-format=github
         working-directory: apps/api
       - run: python -m mypy app
         working-directory: apps/api
@@ -64,7 +64,7 @@ jobs:
       SOURCE_BRANCH: ${{ github.ref_name }}
       SOURCE_SHA: ${{ github.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Criar merge commit local
@@ -81,13 +81,13 @@ jobs:
             git merge --no-ff "$SOURCE_SHA" -m "merge: $SOURCE_BRANCH into develop"
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run verify
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
@@ -96,7 +96,7 @@ jobs:
         working-directory: apps/api
       - run: python -m pytest
         working-directory: apps/api
-      - run: python -m ruff check .
+      - run: python -m ruff check . --output-format=github
         working-directory: apps/api
       - run: python -m mypy app
         working-directory: apps/api
@@ -129,7 +129,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: main
           fetch-depth: 0
@@ -146,7 +146,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git merge --no-commit --no-ff origin/develop
           echo "changed=true" >> "$GITHUB_OUTPUT"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         if: steps.compare.outputs.changed == 'true'
         with:
           node-version: 22
@@ -155,7 +155,7 @@ jobs:
         run: npm ci
       - if: steps.compare.outputs.changed == 'true'
         run: npm run verify
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: steps.compare.outputs.changed == 'true'
         with:
           python-version: '3.12'
@@ -168,7 +168,7 @@ jobs:
         run: python -m pytest
         working-directory: apps/api
       - if: steps.compare.outputs.changed == 'true'
-        run: python -m ruff check .
+        run: python -m ruff check . --output-format=github
         working-directory: apps/api
       - if: steps.compare.outputs.changed == 'true'
         run: python -m mypy app
